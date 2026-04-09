@@ -1,0 +1,17 @@
+name: form_fit_learner
+packages:
+  - apps/**
+  - packages/**
+
+command:
+  bootstrap:
+    # Use this to run any custom setup during bootstrap
+    usePubspecOverrides: true
+
+scripts:
+  analyze:
+    run: melos analyze
+    description: Run dart analyze for all packages in the workspace.
+  test:
+    run: melos test
+    description: Run all tests in the workspace.

@@ -1,0 +1,17 @@
+# This file configures the static analysis as described in the
+# http://dart.dev/guides/language/analysis-options
+# The following line activates a set of recommended lints for Dart 3
+include: package:flutter_lints/analysis_options.yaml
+
+linter:
+  rules:
+    - prefer_const_constructors
+    - prefer_const_literals_to_create_immutables
+    - always_specify_types: false
+    - lines_longer_than_80_chars: false
+
+analyzer:
+  exclude:
+    - "build/**"
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
