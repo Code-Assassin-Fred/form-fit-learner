@@ -115,11 +115,28 @@ app.post('/api/learners', verifyAuth, async (req, res) => {
 app.delete('/api/learners/:id', verifyAuth, async (req, res) => {
   logToFile(`DELETE /api/learners/${req.params.id}`);
   try {
-    await db.collection('learners').doc(req.params.id).delete();
+    const learnerId = req.params.id;
+    
+    // 1. Delete all associated assessments/reports for this learner
+    const assessmentSnapshot = await db.collection('assessments')
+      .where('learnerId', '==', learnerId)
+      .where('userId', '==', req.user.uid)
+      .get();
+    
+    if (!assessmentSnapshot.empty) {
+      logToFile(`Deleting ${assessmentSnapshot.size} associated assessments for learner ${learnerId}`);
+      const batch = db.batch();
+      assessmentSnapshot.docs.forEach(doc => batch.delete(doc.ref));
+      await batch.commit();
+    }
+
+    // 2. Delete the learner record
+    await db.collection('learners').doc(learnerId).delete();
+    
     return res.json({ status: 'success' });
   } catch (err) {
-    logToFile(`Error deleting learner: ${err.message}`);
-    return res.status(500).json({ error: `Failed to delete learner: ${err.message}` });
+    logToFile(`Error deleting learner/assessments: ${err.message}`);
+    return res.status(500).json({ error: `Failed to delete learner and data: ${err.message}` });
   }
 });
 

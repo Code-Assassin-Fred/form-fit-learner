@@ -12,7 +12,7 @@ import {
   Settings, Bell, Zap, GraduationCap, 
   ClipboardCheck, Printer, FileText, Upload,
   Camera, X, CheckCircle, AlertCircle, Info,
-  ChevronDown, ChevronUp
+  ChevronDown, ChevronUp, Trash2
 } from 'lucide-react';
 
 const BACKEND_URL = 'http://localhost:3001';
@@ -28,6 +28,8 @@ function Dashboard() {
   const [analysisStep, setAnalysisStep] = useState('');
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [fakeStep, setFakeStep] = useState('thinking...');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [learnerToDelete, setLearnerToDelete] = useState(null);
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
   const abortControllerRef = useRef(null);
@@ -225,6 +227,33 @@ function Dashboard() {
     } catch (err) { 
       console.error('AddLearner Error:', err); 
       showToast(`Error adding learner: ${err.message}`, 'error');
+    }
+  };
+
+  const handleDeleteLearner = async () => {
+    if (!learnerToDelete || !user) return;
+    
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch(`${BACKEND_URL}/api/learners/${learnerToDelete.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error || 'Failed to delete learner');
+      }
+      
+      showToast("Learner and associated data deleted successfully.");
+      setShowDeleteConfirm(false);
+      setLearnerToDelete(null);
+      fetchAllData(user);
+    } catch (err) {
+      console.error('Delete Error:', err);
+      showToast(`Error: ${err.message}`, 'error');
     }
   };
 
@@ -453,16 +482,6 @@ function Dashboard() {
             <input type="text" placeholder="Search anything..." />
           </div>
           <div className="top-bar-right">
-            <button 
-              className="icon-btn" title="Sync Data" 
-              onClick={() => {
-                showToast("Syncing data with backend...");
-                fetchAllData(user);
-              }}
-              style={{ marginRight: 12 }}
-            >
-              <Zap size={20} className={loading ? "pulse-icon" : ""} />
-            </button>
             <Bell size={20} className="header-icon" />
             <div className="user-profile-sm">
               <div className="avatar-sm">{(user?.email || 'U').charAt(0).toUpperCase()}</div>
@@ -470,6 +489,25 @@ function Dashboard() {
             </div>
           </div>
         </header>
+
+        {showDeleteConfirm && (
+          <div className="modal-overlay">
+            <div className="card modal-content" style={{maxWidth: 400, textAlign: 'center'}}>
+              <div style={{color: '#ef4444', marginBottom: 16}}>
+                <AlertCircle size={48} style={{margin: '0 auto'}} />
+              </div>
+              <h3>Delete Student Profile?</h3>
+              <p style={{color: 'var(--text-secondary)', marginTop: 12, lineHeight: 1.5}}>
+                Are you sure you want to delete <strong>{learnerToDelete?.name}</strong>? 
+                This will permanently remove their profile, all assessments, and ergonomic reports.
+              </p>
+              <div className="modal-actions" style={{justifyContent: 'center', marginTop: 24}}>
+                <button className="secondary-btn-sm" onClick={() => {setShowDeleteConfirm(false); setLearnerToDelete(null);}}>Cancel</button>
+                <button className="primary-btn-sm" style={{backgroundColor: '#ef4444', borderColor: '#ef4444'}} onClick={handleDeleteLearner}>Delete Student</button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="content-area">
           {loading ? (
@@ -582,6 +620,16 @@ function Dashboard() {
                   <div key={l.id} className="card learner-card">
                     <div className="learner-card-header">
                       <div className="avatar-md">👤</div>
+                      <button 
+                        className="icon-btn delete-btn-hover" 
+                        title="Delete Learner"
+                        onClick={() => {
+                          setLearnerToDelete(l);
+                          setShowDeleteConfirm(true);
+                        }}
+                      >
+                        <Trash2 size={18} color="#ef4444" />
+                      </button>
                     </div>
                     <h4>{l.name}</h4>
                     <p className="learner-meta">Age: {l.age}</p>
@@ -1076,6 +1124,16 @@ function Dashboard() {
           body { background: white; }
           .card { border: none; box-shadow: none; margin: 0; padding: 0; }
           .report-container { page-break-after: always; }
+        }
+
+        .delete-btn-hover {
+          padding: 8px;
+          border-radius: 8px;
+          transition: all 0.2s;
+        }
+        .delete-btn-hover:hover {
+          background: #fee2e2;
+          transform: scale(1.1);
         }
       `}</style>
     </div>
