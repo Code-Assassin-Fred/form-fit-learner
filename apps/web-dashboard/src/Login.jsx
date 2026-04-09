@@ -44,7 +44,8 @@ const Login = () => {
 
   return (
     <div className="login-container">
-      <div className="login-card glass-card">
+      <div className="login-left">
+        <div className="login-card glass-card">
         <div className="login-header">
           <div className="login-logo" style={{ background: 'transparent' }}>
             <img src="/logo.png" alt="Form-Fit Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
@@ -109,24 +110,48 @@ const Login = () => {
             </a>
           </p>
         </div>
+        </div>
+      </div>
+      <div className="login-right">
+        <div className="login-image-overlay"></div>
       </div>
 
       <style jsx>{`
         .login-container {
           display: flex;
+          width: 100%;
+          min-height: 100vh;
+          font-family: 'Inter', sans-serif;
+        }
+        .login-left {
+          flex: 1;
+          display: flex;
           justify-content: center;
           align-items: center;
-          min-height: 100vh;
-          background: #f0f4f8;
-          font-family: 'Inter', sans-serif;
+          background: white;
+          padding: 2rem;
+        }
+        .login-right {
+          flex: 1.5;
+          display: none;
+          background: url('/login-bg.png') center/cover no-repeat;
+          position: relative;
+        }
+        @media (min-width: 1024px) {
+          .login-right {
+            display: block;
+          }
+        }
+        .login-image-overlay {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(135deg, rgba(0, 188, 212, 0.2), rgba(15, 23, 42, 0.4));
         }
         .login-card {
           width: 100%;
           max-width: 450px;
           padding: 40px;
-          background: white;
-          border-radius: 20px;
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+          /* Removed background and shadow since it sits on white background */
         }
         .login-header {
           text-align: center;

@@ -28,51 +28,76 @@ exports.analyzeMedia = functions.https.onCall(async (data, context) => {
     }
     const buffer = await response.arrayBuffer();
     const base64Data = Buffer.from(buffer).toString("base64");
+    const mimeType = mediaType === "video" ? "video/mp4" : "image/jpeg";
 
-    const mimeType = mediaType === "video" ? "video/mp4" : "image/jpeg"; // Simplified for MVP
+    // AGENT 1: Observation Agent
+    const observerPrompt = `
+      You are an Observation Agent. Your task is to describe exactly what you see in this ${mediaType} regarding the learner's physical setup and movements.
+      Do not diagnose or suggest solutions. Focus on:
+      - Head and neck angle.
+      - Spine curvature and seating position.
+      - Arm and wrist support.
+      - Grip on tools (if visible).
+      - Table and chair alignment.
+      Be precise and objective.
+    `;
 
-    const prompt = `Analyze this ${mediaType} for physical learning barriers (posture, grip, stability).
-Focus on:
-1. Posture: Slumping, head position, seating alignment.
-2. Ergonomics: Table height, chair support, reach range.
-3. Fine Motor/Grip: How they hold writing/learning tools.
-4. Stability: Tremors, wrist position, arm support.
-
-Output a structured JSON report with exactly these keys:
-- "issue": Short name of the issue.
-- "details": Description of observed behavior.
-- "impact": How it affects learning.
-- "category": 'grip', 'posture', 'stability', or 'seating'.`;
-
-    const result = await model.generateContent([
-      prompt,
+    const observerResult = await model.generateContent([
+      observerPrompt,
       { inlineData: { data: base64Data, mimeType } },
     ]);
-    const textResponse = await result.response.text();
+    const observations = await observerResult.response.text();
+
+    // AGENT 2: Analysis Agent
+    const analystPrompt = `
+      You are an Ergonomic Analysis Agent. Based on these observations:
+      "${observations}"
+      
+      Analyze the ergonomic risks and learning barriers. 
+      Identify specific mechanical disadvantages or physical strains.
+      Provide the analysis in a way that highlights the "Impact" on the learner's endurance and focus.
+    `;
+    const analystResult = await model.generateContent(analystPrompt);
+    const analysis = await analystResult.response.text();
+
+    // AGENT 3: Solutions Agent (Verifier)
+    const solutionsPrompt = `
+      You are a Solutions & Verification Agent. 
+      Observations: "${observations}"
+      Analysis: "${analysis}"
+      
+      Your task:
+      1. Recommend exactly ONE specific 3D printable assistive tool to solve the primary issue.
+      2. Generate a comprehensive ergonomic report in LaTeX format.
+      3. Verify that the recommendation matches the observations to prevent hallucinations.
+
+      The LaTeX report should use sections like \\section{Assessment}, \\section{Identify Risks}, etc.
+      Use LaTeX for any measurements or geometric notations (e.g., angles $\\theta$, force vectors $\\vec{F}$).
+
+      Output a JSON object with exactly these keys:
+      - "issue": Short name of the primary issue.
+      - "details": The LaTeX formatted report content.
+      - "recommendedToolId": A machine-friendly ID for the tool (e.g., "pencil_grip_v1").
+      - "toolDescription": Simple name for the tool.
+      - "category": One of: 'grip', 'posture', 'stability', 'seating'.
+    `;
+    const solutionsResult = await model.generateContent(solutionsPrompt);
+    const solutionsText = await solutionsResult.response.text();
     
-    // Clean up potential markdown formatting from JSON output
-    const cleanJsonTxt = textResponse.replace(/```json/g, "").replace(/```/g, "").trim();
-    let analysisResults;
+    const cleanJsonTxt = solutionsText.replace(/```json/g, "").replace(/```/g, "").trim();
+    let finalResults;
     try {
-      analysisResults = JSON.parse(cleanJsonTxt);
+      finalResults = JSON.parse(cleanJsonTxt);
     } catch (e) {
-      console.log("Failed to parse JSON, returning raw text as details", cleanJsonTxt);
-      analysisResults = {
-        issue: "Unknown Issue",
-        details: cleanJsonTxt,
-        impact: "Requires manual review",
+      console.log("Failed to parse JSON, cleaning up...", solutionsText);
+      finalResults = {
+        issue: "Ergonomic Assessment",
+        details: solutionsText,
+        recommendedToolId: "custom_support",
+        toolDescription: "Custom Support",
         category: "posture"
       };
     }
-
-    // Deterministic Logic based on category
-    let recommendedToolId = "desk_incline"; // default
-    if (analysisResults.category === 'grip') recommendedToolId = "pencil_grip";
-    if (analysisResults.category === 'posture') recommendedToolId = "desk_incline";
-    if (analysisResults.category === 'stability') recommendedToolId = "wrist_cuff";
-    if (analysisResults.category === 'seating') recommendedToolId = "hip_stabilizer";
-
-    const reportSummary = `The learner assessment indicates: ${analysisResults.issue}. ${analysisResults.details} \nImpact: ${analysisResults.impact}. \nRecommended Tool: ${recommendedToolId.replace('_', ' ')}.`;
 
     const assessmentId = admin.firestore().collection("assessments").doc().id;
     const assessment = {
@@ -82,9 +107,10 @@ Output a structured JSON report with exactly these keys:
       mediaUrl,
       mediaType,
       timestamp: admin.firestore.FieldValue.serverTimestamp(),
-      analysisResults,
-      reportSummary,
-      recommendedToolId,
+      analysisResults: finalResults,
+      reportSummary: finalResults.details,
+      recommendedToolId: finalResults.recommendedToolId,
+      toolDescription: finalResults.toolDescription,
       status: "completed"
     };
 
@@ -92,7 +118,38 @@ Output a structured JSON report with exactly these keys:
 
     return { assessmentId, status: "success", assessment };
   } catch (error) {
-    console.error("AI Analysis Error:", error);
+    console.error("Multi-Agent AI Analysis Error:", error);
     throw new functions.https.HttpsError("internal", "Failed to analyze media.", error.message);
+  }
+});
+
+exports.addLearner = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "User must be logged in.");
+  }
+
+  const { name, age } = data;
+  if (!name || !age) {
+    throw new functions.https.HttpsError("invalid-argument", "Name and age are required.");
+  }
+
+  try {
+    const learnerRef = admin.firestore().collection("learners").doc();
+    const learner = {
+      id: learnerRef.id,
+      userId: context.auth.uid,
+      name,
+      age: parseInt(age),
+      status: 'Excellent',
+      score: '100%',
+      class: 'Main Campus',
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+
+    await learnerRef.set(learner);
+    return { status: "success", learnerId: learnerRef.id };
+  } catch (error) {
+    console.error("Error adding learner via Admin SDK:", error);
+    throw new functions.https.HttpsError("internal", error.message);
   }
 });

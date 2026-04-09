@@ -42,44 +42,66 @@ function App() {
 
       {/* Hero Section */}
       <header className="hero section-padding">
-        <h1 className="hero-title">
-          Inclusive Classrooms.<span className="accent-star">*</span><br />
-          <span className="gradient-primary">AI-Driven Comfort.</span>
-        </h1>
-        <p className="hero-subtitle">
-          Advanced AI analyzes learning postures to generate custom, 3D-printable assistive tools. Empowering every learner to reach their full potential without the wait.
-        </p>
-        <div className="hero-ctas">
-          <button className="btn btn-accent">Start Assessment Free</button>
-          <button className="btn btn-outline">See How It Works ↗</button>
-        </div>
-        
-        <div className="hero-visual">
-          <div className="hero-mockup" style={{ overflow: 'hidden', borderRadius: '24px', border: '1px solid var(--glass-border)' }}>
-             <img src="/hero-african.png" alt="Dashboard Mockup" style={{ width: '100%', height: 'auto', display: 'block' }} />
+        <div className="hero-container">
+          <div className="hero-content">
+            <h1 className="hero-title">
+              Inclusive Classrooms.<span className="accent-star">*</span><br />
+              <span className="gradient-primary">AI-Driven Comfort.</span>
+            </h1>
+            <p className="hero-subtitle">
+              Advanced AI analyzes learning postures to generate custom, 3D-printable assistive tools. Empowering every learner to reach their full potential without the wait.
+            </p>
+            <div className="hero-ctas">
+              <button className="btn btn-accent">Start Assessment Free</button>
+              <button className="btn btn-outline">See How It Works ↗</button>
+            </div>
+          </div>
+          
+          <div className="hero-visual">
+            <div className="dashboard-window">
+               <div className="window-header">
+                  <span className="dot red"></span>
+                  <span className="dot yellow"></span>
+                  <span className="dot green"></span>
+               </div>
+               <img src="/hero-african.png" alt="Dashboard Mockup" className="window-img" />
+               <div className="floating-card stat-card float-left">
+                  <div style={{display: 'flex', flexDirection: 'column', alignItems: 'flex-start'}}>
+                    <h4 style={{margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)'}}>Analysis Complete</h4>
+                    <p style={{margin: 0, fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--primary)'}}>99.8% Accuracy</p>
+                  </div>
+               </div>
+               <div className="floating-card stl-card float-right">
+                  <div className="icon" style={{fontSize: '2rem'}}>🚀</div>
+                  <div style={{display: 'flex', flexDirection: 'column', alignItems: 'flex-start'}}>
+                     <h4 style={{margin: 0, fontSize: '1.1rem', fontWeight: 'bold'}}>STL Blueprint Ready</h4>
+                     <p style={{margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)'}}>Click to Download</p>
+                  </div>
+               </div>
+            </div>
           </div>
         </div>
       </header>
 
-      {/* Logo Banner Section */}
+      {/* Tech Stack Banner Section */}
       <div className="logo-banner">
         <div className="banner-text">
-          <span className="stars">★★★★★</span>
-          Trusted by pioneering educators
+          <span className="stars">⚡</span>
+          Built with cutting-edge technology
         </div>
         <div className="marquee-container">
           <div className="marquee">
-            <span>Stanford Prep</span>
-            <span>Oakville Districts</span>
-            <span>SpecialEd Tech</span>
-            <span>NYC Public Schools</span>
-            <span>EdTech Innovators</span>
+            <span>React.js</span>
+            <span>Firebase</span>
+            <span>Gemini AI Pro</span>
+            <span>Flutter</span>
+            <span>Google Cloud</span>
             {/* Duplicated for smooth infinite scroll */}
-            <span>Stanford Prep</span>
-            <span>Oakville Districts</span>
-            <span>SpecialEd Tech</span>
-            <span>NYC Public Schools</span>
-            <span>EdTech Innovators</span>
+            <span>React.js</span>
+            <span>Firebase</span>
+            <span>Gemini AI Pro</span>
+            <span>Flutter</span>
+            <span>Google Cloud</span>
           </div>
         </div>
       </div>
@@ -157,15 +179,15 @@ function App() {
           <div className="creator-info">
             <h2>Built for the 1 in 5.</h2>
             <p>
-              As a former educator, I spent countless hours watching brilliant students struggle with generic classroom furniture. Standardized tools fail to address the nuance of individual physical needs.
+              Hi, I'm an engineer and the creator of Form-Fit Learner. I spent a lot of time observing how standardized learning environments fail to address the nuance of individual physical needs.
             </p>
             <p>
-              I built Form-Fit to bridge the gap between cutting-edge AI and practical classroom reality.
+              That's why I built Form-Fit. To bridge the gap between cutting-edge AI technology and practical classroom reality without wait times.
             </p>
             <div className="creator-quote">
               "We're not just 3D printing plastic. We're printing access, comfort, and focus."
               <br/><br/>
-              <strong style={{color: 'var(--primary)'}}>- The Founder</strong>
+              <strong style={{color: 'var(--primary)'}}>- Developer & Founder</strong>
             </div>
           </div>
         </div>
