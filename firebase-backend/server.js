@@ -209,15 +209,15 @@ app.post('/api/analyze', verifyAuth, async (req, res) => {
     sendProgress('init', 10, 'Initializing AI agents...');
 
     // AGENT 1: Observation Agent
-    sendProgress('observing', 25, 'Agent 1: Observing physical setup...');
+    sendProgress('observing', 25, 'Agent 1: Observing student challenges...');
     const observerPrompt = `You are a Specialist Observation Agent for Assistive Technology.
-Your task is to describe the learner's physical setup and any observable physical challenges or adaptations in this ${mediaType}.
+Your task is to identify and describe the learner's specific physical challenges and interaction barriers in this ${mediaType}.
 Focus on:
-- Limb presence, range of motion, and any missing functions (e.g., missing hands, limited reach).
-- How the learner is interacting with tools (pens, keyboards, mouse).
-- Physical posture and support structures (braces, specialized seating).
-- The alignment of the workstation relative to the learner's unique physical needs.
-Be precise, empathetic, and objective. Describing what is *missing* or *different* is essential for recommending the right assistance.`;
+- Limb presence, range of motion, and any unique physical characteristics.
+- Specific difficulties the learner faces when trying to perform educational tasks (writing, typing, gripping).
+- How their current physical state interacts with standard tools.
+- Any observable fatigue, strain, or dignity-related challenges.
+Be precise, empathetic, and objective. Focus on the *human capability and barriers* rather than the furniture or room setup.`;
 
     const observerResult = await model.generateContent([
       observerPrompt,
@@ -227,12 +227,12 @@ Be precise, empathetic, and objective. Describing what is *missing* or *differen
 
     // AGENT 2: Analysis Agent
     sendProgress('analyzing', 50, 'Agent 2: Analyzing ergonomic risks...');
-    const analystPrompt = `You are an Adaptive Ergonomics Analysis Agent. Based on these observations:
+    const analystPrompt = `You are an Adaptive Learning Analysis Agent. Based on these observations:
 "${observations}"
 
-Analyze the learning barriers and physical strains specifically for this individual's physical profile.
-Identify where the current environment fails to support their specific disability or physical limitation.
-Highlight the "Impact" on their ability to perform educational tasks with endurance and dignity.`;
+Analyze the specific learning barriers and physical hurdles for this individual.
+Identify precisely where standard educational tools fail to accommodate their unique physical profile.
+Highlight the "Impact" on their learning endurance, speed, and dignity. The goal is to identify challenges that prevent them from reaching their full potential.`;
     const analystResult = await model.generateContent(analystPrompt);
     const analysis = await analystResult.response.text();
 
@@ -244,18 +244,20 @@ Analysis: "${analysis}"
 
 Your task:
 1. Recommend exactly ONE specific 3D printable assistive tool tailored to this learner's specific disability (e.g., custom pen stabilizer for missing fingers, foot-operated input, specialized grip).
-2. Generate a comprehensive Inclusive Ergonomic Report in Markdown format with LaTeX for measurements.
-3. Ensure the solution directly addresses the observed physical limitation.
+2. Generate a comprehensive Inclusive Ergonomic Report.
 
-The report should use Markdown for structure:
-- Use # for the main title (e.g., # Inclusive Ergonomic Report).
-- Use ## for sections (e.g., ## Learner Profile, ## Physical Barriers, ## Recommendations).
-- Use ### for subsections.
-- Use ALWAYS use LaTeX in $...$ or $$...$$ for any measurements, angles, or geometric notations (e.g., $45^{\circ}$, $15cm$).
+CRITICAL FORMATTING RULES:
+- Use MARKDOWN for document structure. 
+- DO NOT use LaTeX commands like \\section, \\textbf, \\documentclass, or \\begin{document}.
+- Use ## **Heading Name** for all major sections (ensure they are bolded).
+- Use ### **Subheading Name** for subsections.
+- ONLY use LaTeX for mathematical measurements, angles, or geometric notations, and wrap them in single $ for inline or double $$ for blocks. (e.g., $45^{\circ}$, $15cm$).
+- The report should focus heavily on the **Human Challenges** and how to overcome them.
+- Be professional, empathetic, and highly detailed.
 
 Output a JSON object with exactly these keys:
 - "issue": Short name of the primary challenge identified.
-- "details": The Markdown + LaTeX formatted report content.
+- "details": The Markdown formatted report content.
 - "recommendedToolId": A machine-friendly ID for the tool (e.g., "adaptive_grip_v1").
 - "toolDescription": Simple name for the assistive tool.
 - "category": One of: 'grip', 'posture', 'stability', 'accessibility'.`;

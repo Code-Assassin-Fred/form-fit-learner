@@ -11,7 +11,8 @@ import {
   LogOut, LayoutDashboard, Users, Search, 
   Settings, Bell, Zap, GraduationCap, 
   ClipboardCheck, Printer, FileText, Upload,
-  Camera, X, CheckCircle, AlertCircle, Info
+  Camera, X, CheckCircle, AlertCircle, Info,
+  ChevronDown, ChevronUp
 } from 'lucide-react';
 
 const BACKEND_URL = 'http://localhost:3001';
@@ -42,16 +43,35 @@ function Dashboard() {
   // Helper: Clean up LaTeX boilerplate if present
   const cleanReportContent = (content) => {
     if (!content) return '';
-    // If it's a full LaTeX document, try to extract only the body or part of it
-    // Often models start with \documentclass or include preamble
-    return content
+    
+    let cleaned = content
+      // 1. Remove full LaTeX document structure
       .replace(/\\documentclass\{[\s\S]*?\\begin\{document\}/g, '')
       .replace(/\\end\{document\}/g, '')
       .replace(/\\title\{[\s\S]*?\}/g, '')
       .replace(/\\author\{[\s\S]*?\}/g, '')
       .replace(/\\date\{[\s\S]*?\}/g, '')
       .replace(/\\maketitle/g, '')
+      .replace(/\\thispagestyle\{[\s\S]*?\}/g, '')
+      .replace(/\\newpage/g, '')
+      
+      // 2. Translate common structural commands to Markdown
+      .replace(/\\section\*?\{([\s\S]*?)\}/g, '## **$1**')
+      .replace(/\\subsection\*?\{([\s\S]*?)\}/g, '### **$1**')
+      .replace(/\\subsubsection\*?\{([\s\S]*?)\}/g, '#### **$1**')
+      .replace(/\\textbf\{([\s\S]*?)\}/g, '**$1**')
+      .replace(/\\textit\{([\s\S]*?)\}/g, '*$1*')
+      
+      // 3. Clean up other common commands
+      .replace(/\\large/g, '')
+      .replace(/\\small/g, '')
+      .replace(/\\centering/g, '')
+      
+      // 4. Handle double backslashes for line breaks
+      .replace(/\\\\/g, '\n\n')
       .trim();
+
+    return cleaned;
   };
 
   const showToast = (message, type = 'success') => {
@@ -708,7 +728,7 @@ function Dashboard() {
                           </div>
                         </div>
                         <button className="expand-toggle">
-                          {isExpanded ? <X size={20} /> : <Zap size={20} />}
+                          {isExpanded ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
                         </button>
                       </div>
                       
@@ -830,6 +850,9 @@ function Dashboard() {
         .upload-dropzone:hover { background: #f8f9fa; border-color: var(--primary-color); }
         .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
         .latex-content { font-family: 'Inter', sans-serif; line-height: 1.8; color: #333; }
+        .latex-content h2, .latex-content h3, .latex-content h4 { font-weight: 800; color: #1a202c; margin-top: 2rem; margin-bottom: 1rem; }
+        .latex-content p { margin-bottom: 1.2rem; }
+        .latex-content strong { font-weight: 700; color: #000; }
         .latex-content section { margin-top: 24px; }
         .report-container { padding: 32px; margin-bottom: 24px; }
         .report-header { border-bottom: 2px solid #eee; padding-bottom: 16px; margin-bottom: 24px; }
@@ -936,8 +959,8 @@ function Dashboard() {
         .report-header.clickable:hover { background: #f1f5f9; }
         .report-header h3 { margin: 0; color: #1a202c; font-size: 1.1rem; }
         .report-meta { margin: 4px 0 0 0; color: #718096; font-size: 0.85rem; }
-        .expand-toggle { background: #f1f5f9; border: none; color: #64748b; cursor: pointer; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
-        .report-container.expanded .expand-toggle { background: var(--primary-color); color: white; transform: rotate(180deg); }
+        .expand-toggle { background: #f1f5f9; border: none; color: #64748b; cursor: pointer; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .report-container.expanded .expand-toggle { background: var(--primary-color); color: white; }
         .report-content { padding: 32px; animation: slideDown 0.3s ease-out; }
         .report-footer { padding: 16px 32px; background: #fdfdfd; border-top: 1px solid #f7f7f7; }
         @keyframes slideDown {
