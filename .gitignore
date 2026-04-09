@@ -14,6 +14,20 @@ firebase-debug.log
 firestore-debug.log
 pubspec-overrides.yaml
 
+# ===== SECRETS & API KEYS (NEVER COMMIT) =====
+# Environment variables
+.env
+.env.*
+
+# Firebase config files (contain API keys)
+**/google-services.json
+**/GoogleService-Info.plist
+
+# Service account keys
+service-account.json
+*-firebase-adminsdk-*.json
+**/service-account*.json
+
 # IDEs
 .vscode/
 .idea/
