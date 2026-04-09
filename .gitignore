@@ -37,3 +37,11 @@ service-account.json
 # OS
 .DS_Store
 Thumbs.db
+
+# Dependencies
+node_modules/
+**/node_modules/
+dist/
+.dart_tool/
+.packages
+build/

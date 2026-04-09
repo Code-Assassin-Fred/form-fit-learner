@@ -15,7 +15,14 @@ function App() {
             <a href="#features">Features</a>
             <a href="#how-it-works">How it Works</a>
             <a href="#about">About</a>
-            <button className="btn btn-primary">Try Dashboard</button>
+            <button 
+              className="btn btn-outline" 
+              style={{padding: '8px 20px'}}
+              onClick={() => window.location.href = 'http://localhost:5174/login'}
+            >
+              Sign In
+            </button>
+            <button className="btn btn-accent" style={{padding: '8px 24px'}}>Get App</button>
           </div>
         </div>
       </nav>

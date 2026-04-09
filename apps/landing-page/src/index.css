@@ -101,3 +101,15 @@ h1, h2, h3, h4 {
   background: var(--primary);
   color: white;
 }
+
+.btn-accent {
+  background: var(--accent);
+  color: #0F172A;
+  box-shadow: 0 4px 14px 0 rgba(255, 193, 7, 0.4);
+}
+
+.btn-accent:hover {
+  background: #ffb300;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 193, 7, 0.3);
+}
