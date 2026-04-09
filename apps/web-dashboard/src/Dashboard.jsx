@@ -30,6 +30,7 @@ function Dashboard() {
   const [fakeStep, setFakeStep] = useState('thinking...');
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
+  const abortControllerRef = useRef(null);
 
   const [learners, setLearners] = useState([]);
   const [classes, setClasses] = useState([]);
@@ -284,6 +285,8 @@ function Dashboard() {
     setAnalyzing(true);
     setAnalysisStep('Initializing...');
     setAnalysisProgress(5);
+    
+    abortControllerRef.current = new AbortController();
 
     try {
       // 1. Prepare file for AI (Convert to base64)
@@ -314,6 +317,7 @@ function Dashboard() {
           mediaType,
           learnerId: selectedLearnerId
         }),
+        signal: abortControllerRef.current.signal
       });
 
       if (!response.ok) throw new Error('Backend failed to start analysis');
@@ -359,9 +363,15 @@ function Dashboard() {
         }
       }
     } catch (err) {
-      console.error('Assessment failed', err);
-      showToast(`AI Assessment Error: ${err.message}`, 'error');
+      if (err.name === 'AbortError') {
+        console.log('Assessment analysis aborted by user.');
+        showToast('Assessment cancelled.', 'info');
+      } else {
+        console.error('Assessment failed', err);
+        showToast(`AI Assessment Error: ${err.message}`, 'error');
+      }
       setAnalyzing(false);
+      abortControllerRef.current = null;
     }
   };
 
@@ -601,7 +611,11 @@ function Dashboard() {
                   <div className="card modal-content" style={{maxWidth: 600}}>
                     <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
                       <h3>New AI Assessment</h3>
-                      <button className="icon-btn" onClick={() => {setShowNewAssessment(false); stopCamera();}}><X size={20}/></button>
+                      <button className="icon-btn" onClick={() => {
+                        if (abortControllerRef.current) abortControllerRef.current.abort();
+                        setShowNewAssessment(false); 
+                        stopCamera();
+                      }}><X size={20}/></button>
                     </div>
                     
                     <div style={{display: 'flex', flexDirection: 'column', gap: 16, marginTop: 16}}>
@@ -674,6 +688,16 @@ function Dashboard() {
                             <div className="led-node pulse-3"></div>
                             <div className="led-node pulse-1"></div>
                             <div className="led-node pulse-2"></div>
+                          </div>
+
+                          <div className="modal-actions" style={{justifyContent: 'center', marginTop: '20px'}}>
+                            <button 
+                              className="secondary-btn-sm" 
+                              style={{borderColor: '#444', color: '#ef4444', fontWeight: 'bold'}}
+                              onClick={() => abortControllerRef.current?.abort()}
+                            >
+                              Cancel Analysis
+                            </button>
                           </div>
                         </div>
                       ) : (

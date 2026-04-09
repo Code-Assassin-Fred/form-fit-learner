@@ -182,6 +182,11 @@ app.get('/api/activities', verifyAuth, async (req, res) => {
 app.post('/api/analyze', verifyAuth, async (req, res) => {
   const { mediaBase64, mimeType, mediaType, learnerId } = req.body;
 
+  let isCancelled = false;
+  req.on('close', () => {
+    isCancelled = true;
+  });
+
   if (!mediaBase64 || !learnerId) {
     return res.status(400).json({ error: 'mediaBase64 and learnerId are required.' });
   }
@@ -207,6 +212,7 @@ app.post('/api/analyze', verifyAuth, async (req, res) => {
     const mediaUrl = `http://localhost:3001/uploads/${fileName}`;
 
     sendProgress('init', 10, 'Initializing AI agents...');
+    if (isCancelled) return;
 
     // AGENT 1: Observation Agent
     sendProgress('observing', 25, 'Agent 1: Observing student challenges...');
@@ -224,6 +230,7 @@ Be precise, empathetic, and objective. Focus on the *human capability and barrie
       { inlineData: { data: mediaBase64, mimeType } },
     ]);
     const observations = await observerResult.response.text();
+    if (isCancelled) return;
 
     // AGENT 2: Analysis Agent
     sendProgress('analyzing', 50, 'Agent 2: Analyzing ergonomic risks...');
@@ -235,6 +242,7 @@ Identify precisely where standard educational tools fail to accommodate their un
 Highlight the "Impact" on their learning endurance, speed, and dignity. The goal is to identify challenges that prevent them from reaching their full potential.`;
     const analystResult = await model.generateContent(analystPrompt);
     const analysis = await analystResult.response.text();
+    if (isCancelled) return;
 
     // AGENT 3: Solutions Agent
     sendProgress('recommending', 75, 'Agent 3: Generating assistive recommendations...');
@@ -279,6 +287,8 @@ Output a JSON object with exactly these keys:
         category: 'accessibility'
       };
     }
+    
+    if (isCancelled) return;
 
     logToFile('Saving report to Firestore...');
     
