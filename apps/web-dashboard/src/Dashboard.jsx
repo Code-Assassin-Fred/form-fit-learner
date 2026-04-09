@@ -62,12 +62,26 @@ function Dashboard() {
       .replace(/\\textbf\{([\s\S]*?)\}/g, '**$1**')
       .replace(/\\textit\{([\s\S]*?)\}/g, '*$1*')
       
-      // 3. Clean up other common commands
+      // 3. Handle Lists
+      .replace(/\\begin\{itemize\}(\[.*?\])?/g, '')
+      .replace(/\\end\{itemize\}/g, '')
+      .replace(/\\begin\{enumerate\}(\[.*?\])?/g, '')
+      .replace(/\\end\{enumerate\}/g, '')
+      .replace(/\\item/g, '\n* ')
+      
+      // 4. Clean up other common commands and special chars
+      .replace(/\\label=\{[\s\S]*?\}/g, '')
       .replace(/\\large/g, '')
       .replace(/\\small/g, '')
       .replace(/\\centering/g, '')
+      .replace(/\\\&/g, '&')
+      .replace(/\\%/g, '%')
+      .replace(/\\\$/g, '$')
+      .replace(/\\_/g, '_')
+      .replace(/\\\{/g, '{')
+      .replace(/\\\}/g, '}')
       
-      // 4. Handle double backslashes for line breaks
+      // 5. Handle double backslashes for line breaks
       .replace(/\\\\/g, '\n\n')
       .trim();
 
@@ -749,6 +763,9 @@ function Dashboard() {
                               win.document.write(`<html><head><title>Report</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css"></head><body>${document.querySelector('.latex-content').innerHTML}</body></html>`);
                               win.print();
                             }}>Print This Report</button>
+                            <button className="secondary-btn-sm" onClick={() => setExpandedReportId(null)} style={{ marginLeft: 12, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <ChevronUp size={16} /> Collapse Report
+                            </button>
                           </div>
                         </>
                       )}
