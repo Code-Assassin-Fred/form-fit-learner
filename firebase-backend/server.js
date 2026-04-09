@@ -233,14 +233,14 @@ app.post('/api/analyze', verifyAuth, async (req, res) => {
 
     // AGENT 1: Observation Agent
     sendProgress('observing', 25, 'Agent 1: Observing student challenges...');
-    const observerPrompt = `You are a Specialist Observation Agent for Assistive Technology.
-Your task is to identify and describe the learner's specific physical challenges and interaction barriers in this ${mediaType}.
+    const observerPrompt = `You are a Specialist Observation Agent for Assistive Technology and Physical Inclusion.
+Your task is to identify and describe the learner's specific physical inabilities, constrictions, and interaction barriers in this ${mediaType}.
 Focus on:
-- Limb presence, range of motion, and any unique physical characteristics.
+- Specific physical inabilities (missing limbs, paralyzed areas) and physical constrictions (limited range of motion, tremors).
 - Specific difficulties the learner faces when trying to perform educational tasks (writing, typing, gripping).
-- How their current physical state interacts with standard tools.
+- How their current physical state and inabilities interact with standard tools.
 - Any observable fatigue, strain, or dignity-related challenges.
-Be precise, empathetic, and objective. Focus on the *human capability and barriers* rather than the furniture or room setup.`;
+Be precise, empathetic, and objective. Focus on the *human capability and physical barriers* rather than the furniture or room setup.`;
 
     const observerResult = await model.generateContent([
       observerPrompt,
@@ -250,12 +250,12 @@ Be precise, empathetic, and objective. Focus on the *human capability and barrie
     if (isCancelled) return;
 
     // AGENT 2: Analysis Agent
-    sendProgress('analyzing', 50, 'Agent 2: Analyzing ergonomic risks...');
-    const analystPrompt = `You are an Adaptive Learning Analysis Agent. Based on these observations:
+    sendProgress('analyzing', 50, 'Agent 2: Analyzing physical inabilities & barriers...');
+    const analystPrompt = `You are an Adaptive Learning & Inclusion Analysis Agent. Based on these observations:
 "${observations}"
 
-Analyze the specific learning barriers and physical hurdles for this individual.
-Identify precisely where standard educational tools fail to accommodate their unique physical profile.
+Analyze the specific physical inabilities and constrictions that create learning barriers for this individual.
+Identify precisely where standard educational tools fail to accommodate their unique physical profile and constrictions.
 Highlight the "Impact" on their learning endurance, speed, and dignity. The goal is to identify challenges that prevent them from reaching their full potential.`;
     const analystResult = await model.generateContent(analystPrompt);
     const analysis = await analystResult.response.text();
@@ -263,13 +263,13 @@ Highlight the "Impact" on their learning endurance, speed, and dignity. The goal
 
     // AGENT 3: Solutions Agent
     sendProgress('recommending', 75, 'Agent 3: Generating assistive recommendations...');
-    const solutionsPrompt = `You are an Assistive Technology Solutions Specialist.
+    const solutionsPrompt = `You are an Assistive Technology & Inclusion Specialist.
 Observations: "${observations}"
 Analysis: "${analysis}"
 
 Your task:
-1. Recommend exactly ONE specific 3D printable assistive tool tailored to this learner's specific disability (e.g., custom pen stabilizer for missing fingers, foot-operated input, specialized grip).
-2. Generate a comprehensive Inclusive Ergonomic Report.
+1. Recommend exactly ONE specific 3D printable assistive tool tailored to this learner's specific physical inability or constriction (e.g., custom pen stabilizer for missing fingers, foot-operated input, specialized grip).
+2. Generate a comprehensive Inclusive Physical Barrier & Ergonomic Report.
 
 CRITICAL FORMATTING RULES:
 - Use MARKDOWN for document structure. 

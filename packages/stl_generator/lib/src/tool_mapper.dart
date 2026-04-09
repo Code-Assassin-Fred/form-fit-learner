@@ -12,9 +12,9 @@ class ToolMapper {
     'desk_incline': AssistiveTool(
       id: 'desk_incline',
       name: 'Desk Incline Wedge',
-      description: 'Raises the learning surface to improve posture and head position.',
+      description: 'Raises the learning surface to adapt to physical constrictions and improve accessibility.',
       stlPath: 'tools/desk_incline.stl',
-      category: 'posture',
+      category: 'adaptation',
     ),
     'wrist_cuff': AssistiveTool(
       id: 'wrist_cuff',
@@ -26,9 +26,9 @@ class ToolMapper {
     'hip_stabilizer': AssistiveTool(
       id: 'hip_stabilizer',
       name: 'Hip Stabilizer',
-      description: 'Provides lateral support to ensure a stable seated position.',
+      description: 'Provides lateral support to ensure a stable seated position for physical inabilities.',
       stlPath: 'tools/hip_stabilizer.stl',
-      category: 'seating',
+      category: 'accessibility',
     ),
   };
 
@@ -37,9 +37,9 @@ class ToolMapper {
     final String? category = analysisResults['category'];
     
     if (category == 'grip') return _toolDatabase['pencil_grip'];
-    if (category == 'posture') return _toolDatabase['desk_incline'];
+    if (category == 'adaptation') return _toolDatabase['desk_incline'];
     if (category == 'stability') return _toolDatabase['wrist_cuff'];
-    if (category == 'seating') return _toolDatabase['hip_stabilizer'];
+    if (category == 'accessibility') return _toolDatabase['hip_stabilizer'];
     
     return null;
   }

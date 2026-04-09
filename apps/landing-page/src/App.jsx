@@ -49,7 +49,7 @@ function App() {
               <span className="gradient-primary">AI-Driven Comfort.</span>
             </h1>
             <p className="hero-subtitle">
-              Advanced AI analyzes learning postures to generate custom, 3D-printable assistive tools. Empowering every learner to reach their full potential without the wait.
+              Advanced AI analyzes physical inabilities and constrictions to generate custom, 3D-printable assistive tools. Empowering every learner to reach their full potential without the wait.
             </p>
             <div className="hero-ctas">
               <button className="btn btn-accent">Start Assessment Free</button>
@@ -137,7 +137,7 @@ function App() {
           <div className="glass-card bento-item large">
             <div className="bento-content">
               <h3>Proprietary AI Kinematic Analysis</h3>
-              <p>Our algorithms identify physical learning barriers from simple video captures in real-time, calculating precise anatomical adjustments.</p>
+              <p>Our algorithms identify physical inabilities and constrictions from simple video captures in real-time, calculating precise anatomical adjustments.</p>
             </div>
             <div className="feature-visual">
                <div className="abstract-shape"></div>
@@ -179,7 +179,7 @@ function App() {
           <div className="creator-info">
             <h2>Built for the 1 in 5.</h2>
             <p>
-              Hi, I'm an engineer and the creator of Form-Fit Learner. I spent a lot of time observing how standardized learning environments fail to address the nuance of individual physical needs.
+              Hi, I'm an engineer and the creator of Form-Fit Learner. I spent a lot of time observing how standardized learning environments fail to address the nuance of individual physical inabilities and constrictions.
             </p>
             <p>
               That's why I built Form-Fit. To bridge the gap between cutting-edge AI technology and practical classroom reality without wait times.

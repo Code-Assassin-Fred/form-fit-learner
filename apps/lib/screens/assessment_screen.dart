@@ -118,7 +118,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                 ).animate().fadeIn().slideY(begin: -0.2),
                 const SizedBox(height: 8),
                 Text(
-                  'Record a video or take a photo of the posture.',
+                  'Record a video or take a photo of physical inabilities or constrictions.',
                   style: TextStyle(color: Colors.grey.shade600),
                   textAlign: TextAlign.center,
                 ).animate().fadeIn(delay: 200.ms),
@@ -228,7 +228,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                             width: 24,
                             child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                           )
-                        : const Text('Analyze Posture & Barriers', style: TextStyle(fontSize: 18)),
+                        : const Text('Analyze Physical Inabilities & Barriers', style: TextStyle(fontSize: 18)),
                   ).animate().fadeIn().scale(),
                 const SizedBox(height: 24),
               ],

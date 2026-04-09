@@ -37,13 +37,12 @@ exports.analyzeMedia = functions.https.onCall(async (data, context) => {
 
     // AGENT 1: Observation Agent
     const observerPrompt = `
-      You are an Observation Agent. Your task is to describe exactly what you see in this ${mediaType} regarding the learner's physical setup and movements.
+      You are an Observation Agent for Physical Inclusion. Your task is to describe exactly what you see in this ${mediaType} regarding the learner's physical inabilities, constrictions, and movements.
       Do not diagnose or suggest solutions. Focus on:
-      - Head and neck angle.
-      - Spine curvature and seating position.
-      - Arm and wrist support.
+      - Physical inabilities (e.g., missing digits, limb paralysis) and physical constrictions (e.g., rigid joints, limited reach).
+      - Seating position and overall physical orientation.
+      - Arm, wrist, and hand interaction with learning environments.
       - Grip on tools (if visible).
-      - Table and chair alignment.
       Be precise and objective.
     `;
 
@@ -55,11 +54,11 @@ exports.analyzeMedia = functions.https.onCall(async (data, context) => {
 
     // AGENT 2: Analysis Agent
     const analystPrompt = `
-      You are an Ergonomic Analysis Agent. Based on these observations:
+      You are a Physical Inclusion & Adaptive Analysis Agent. Based on these observations:
       "${observations}"
       
-      Analyze the ergonomic risks and learning barriers. 
-      Identify specific mechanical disadvantages or physical strains.
+      Analyze the physical inabilities and constrictions that create learning barriers. 
+      Identify specific mechanical disadvantages, physical strains, or accessibility hurdles.
       Provide the analysis in a way that highlights the "Impact" on the learner's endurance and focus.
     `;
     const analystResult = await model.generateContent(analystPrompt);
@@ -80,11 +79,11 @@ exports.analyzeMedia = functions.https.onCall(async (data, context) => {
       Use LaTeX for any measurements or geometric notations (e.g., angles $\\theta$, force vectors $\\vec{F}$).
 
       Output a JSON object with exactly these keys:
-      - "issue": Short name of the primary issue.
-      - "details": The LaTeX formatted report content.
+      - "issue": Short name of the primary physical constraint.
+      - "details": The LaTeX formatted inclusive report content.
       - "recommendedToolId": A machine-friendly ID for the tool (e.g., "pencil_grip_v1").
-      - "toolDescription": Simple name for the tool.
-      - "category": One of: 'grip', 'posture', 'stability', 'seating'.
+      - "toolDescription": Simple name for the assistive tool.
+      - "category": One of: 'grip', 'adaptation', 'stability', 'accessibility'.
     `;
     const solutionsResult = await model.generateContent(solutionsPrompt);
     const solutionsText = await solutionsResult.response.text();

@@ -520,7 +520,7 @@ function Dashboard() {
               <div className="banner no-print">
                 <div className="banner-content">
                   <p className="banner-label">Innovation Hub</p>
-                  <h1>Empowering Learners through Personalized Ergonomic AI</h1>
+                  <h1>Empowering Learners through Inclusive Physical & Ergonomic AI</h1>
                   <button className="banner-btn" onClick={() => setActiveTab('reports')}>Review Recent Reports</button>
                 </div>
                 <div className="banner-bg-icon">🚀</div>
@@ -602,7 +602,7 @@ function Dashboard() {
                         value={newLearnerData.age} onChange={e => setNewLearnerData({...newLearnerData, age: e.target.value})} 
                       />
                       <textarea 
-                        placeholder="Special Needs / Disability Details (e.g., No right hand, limited mobility)" className="text-input" 
+                        placeholder="Physical Inabilities / Constrictions Details (e.g., No right hand, limited mobility)" className="text-input" 
                         style={{minHeight: 80, resize: 'vertical'}}
                         value={newLearnerData.disabilityInfo} onChange={e => setNewLearnerData({...newLearnerData, disabilityInfo: e.target.value})} 
                       />
@@ -635,7 +635,7 @@ function Dashboard() {
                     <p className="learner-meta">Age: {l.age}</p>
                     <div className="learner-details" style={{marginTop: 12}}>
                       <p style={{fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500}}>Special Needs:</p>
-                      <p style={{fontSize: '0.9rem', color: 'var(--text-primary)', marginTop: 4}}>{l.disabilityInfo || 'General Ergonomic Review'}</p>
+                      <p style={{fontSize: '0.9rem', color: 'var(--text-primary)', marginTop: 4}}>{l.disabilityInfo || 'Physical Accessibility Review'}</p>
                     </div>
                   </div>
                 ))}
@@ -843,7 +843,7 @@ function Dashboard() {
           ) : activeTab === 'reports' ? (
             <div className="reports-page">
               <div className="page-header no-print">
-                <h2>Ergonomic Reports</h2>
+                <h2>Accessibility & Physical Barrier Reports</h2>
                 <button className="primary-btn-sm" onClick={handlePrint}><Printer size={16} /> Print All Reports</button>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
