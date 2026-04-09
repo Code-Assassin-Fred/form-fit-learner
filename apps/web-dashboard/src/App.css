@@ -143,7 +143,6 @@ body {
   flex: 1;
   margin-left: var(--sidebar-width);
   padding: 2rem;
-  max-width: calc(100vw - var(--sidebar-width) - 320px);
 }
 
 .top-bar {
@@ -364,85 +363,7 @@ body {
 .critical { background: #fee2e2; color: #ef4444; }
 .excellent { background: #ecfdf5; color: #10b981; }
 
-/* Right Panel Styles */
-.right-panel {
-  width: 320px;
-  background: var(--bg-sidebar);
-  border-left: 1px solid var(--border-color);
-  padding: 2rem;
-  position: fixed;
-  right: 0;
-  height: 100vh;
-}
 
-.profile-section {
-  text-align: center;
-  padding: 1rem 0 2rem;
-}
-
-.avatar-lg {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background: #e2e8f0;
-  margin: 0 auto 1.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2.5rem;
-}
-
-.profile-meta { color: var(--text-secondary); font-size: 0.875rem; }
-
-.activity-section { margin-bottom: 2.5rem; }
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.25rem;
-}
-
-.period-select {
-  border: none;
-  background: transparent;
-  font-weight: 700;
-  outline: none;
-}
-
-.chart-bar-container {
-  height: 120px;
-  display: flex;
-  align-items: flex-end;
-  gap: 0.5rem;
-}
-
-.chart-bar {
-  flex: 1;
-  background: #e2e8f0;
-  border-radius: 6px;
-  transition: all 0.3s;
-}
-
-.chart-bar.active { background: var(--primary); }
-
-.task-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.task-card {
-  padding: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  border: 1px solid var(--border-color);
-  box-shadow: none;
-}
-
-.task-icon { font-size: 1.5rem; }
-.task-title { font-weight: 700; font-size: 0.875rem; margin: 0; }
-.task-due { font-size: 0.75rem; color: var(--text-secondary); margin: 0; }
 
 /* Learners Grid */
 .learners-grid {

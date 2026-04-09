@@ -803,39 +803,7 @@ function Dashboard() {
         </div>
       </main>
 
-      {/* Right Panel */}
-      <aside className="right-panel no-print">
-        <h3>My profile</h3>
-        <div className="profile-section">
-          <div className="avatar-lg">👩‍💻</div>
-          <h3>{user?.email?.split('@')[0] || 'User'}</h3>
-          <p className="profile-meta">{user?.email}</p>
-        </div>
 
-        <div className="activity-section">
-          <div className="section-header"><h4>Activity</h4></div>
-          <div className="chart-bar-container">
-            {[40, 70, 45, 90, 65, 80, 50].map((h, i) => (
-              <div key={i} className={`chart-bar ${i === 3 ? 'active' : ''}`} style={{height: `${h}%`}}></div>
-            ))}
-          </div>
-        </div>
-
-        <div className="tasks-section">
-          <h4>List Task</h4>
-          <div className="task-list">
-            {tasks.map(task => (
-              <div key={task.id} className="card task-card">
-                <div className="task-icon">{task.icon || '📌'}</div>
-                <div>
-                  <p className="task-title">{task.title}</p>
-                  <p className="task-due">{task.dueDate}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </aside>
 
       <style>{`
         .toast-notification {
