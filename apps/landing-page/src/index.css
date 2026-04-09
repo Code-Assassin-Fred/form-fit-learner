@@ -113,3 +113,13 @@ h1, h2, h3, h4 {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(255, 193, 7, 0.3);
 }
+
+/* Hide scrollbars globally */
+::-webkit-scrollbar {
+  display: none;
+}
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+

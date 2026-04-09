@@ -255,9 +255,9 @@
   margin: 0 auto 1.5rem;
 }
 
-.orange-bg { background-color: rgba(255, 87, 34, 0.1); }
-.blue-bg { background-color: rgba(0, 188, 212, 0.1); }
-.yellow-bg { background-color: rgba(255, 193, 7, 0.1); }
+.orange-bg { background-color: #FEE2E2; color: #DC2626; }
+.blue-bg { background-color: #E0F2FE; color: #0284C7; }
+.yellow-bg { background-color: #DCFCE7; color: #16A34A; }
 
 .feature-card h3 {
   font-size: 1.5rem;

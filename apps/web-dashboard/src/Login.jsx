@@ -1,25 +1,30 @@
 import React, { useState } from 'react';
 import { auth } from './firebase';
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
-import { LogIn, Mail, Lock, Chrome, ShieldCheck } from 'lucide-react';
+import { LogIn, Mail, Lock, Chrome, ShieldCheck, UserPlus } from 'lucide-react';
 
 const Login = () => {
+  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleEmailLogin = async (e) => {
+  const handleEmailAuth = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      if (isSignUp) {
+        await createUserWithEmailAndPassword(auth, email, password);
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
+      }
       navigate('/');
     } catch (err) {
-      setError('Invalid email or password. Please try again.');
+      setError(isSignUp ? 'Sign up failed. Try a different email.' : 'Invalid email or password. Please try again.');
       console.error(err);
     } finally {
       setLoading(false);
@@ -41,14 +46,14 @@ const Login = () => {
     <div className="login-container">
       <div className="login-card glass-card">
         <div className="login-header">
-          <div className="login-logo">
-            <ShieldCheck size={40} className="logo-icon" />
+          <div className="login-logo" style={{ background: 'transparent' }}>
+            <img src="/logo.png" alt="Form-Fit Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
           </div>
-          <h1>Welcome Back</h1>
-          <p>Sign in to access your Form-Fit Dashboard</p>
+          <h1>{isSignUp ? 'Create an Account' : 'Welcome Back'}</h1>
+          <p>{isSignUp ? 'Sign up to create your Form-Fit Dashboard' : 'Sign in to access your Form-Fit Dashboard'}</p>
         </div>
 
-        <form onSubmit={handleEmailLogin} className="login-form">
+        <form onSubmit={handleEmailAuth} className="login-form">
           <div className="input-group">
             <label htmlFor="email">Email Address</label>
             <div className="input-wrapper">
@@ -82,8 +87,8 @@ const Login = () => {
           {error && <div className="error-message">{error}</div>}
 
           <button type="submit" className="login-btn primary-btn" disabled={loading}>
-            {loading ? 'Signing in...' : 'Sign In'}
-            <LogIn size={18} />
+            {loading ? (isSignUp ? 'Signing up...' : 'Signing in...') : (isSignUp ? 'Sign Up' : 'Sign In')}
+            {isSignUp ? <UserPlus size={18} /> : <LogIn size={18} />}
           </button>
         </form>
 
@@ -97,7 +102,12 @@ const Login = () => {
         </button>
 
         <div className="login-footer">
-          <p>Don't have an account? <a href="#">Contact Admin</a></p>
+          <p>
+            {isSignUp ? 'Already have an account?' : "Don't have an account?"} 
+            <a href="#" onClick={(e) => { e.preventDefault(); setIsSignUp(!isSignUp); }}>
+              {isSignUp ? ' Sign In' : ' Sign Up'}
+            </a>
+          </p>
         </div>
       </div>
 

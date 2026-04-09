@@ -101,9 +101,9 @@ body {
   font-size: 1.5rem;
 }
 
-.blue-light { background: rgba(0, 188, 212, 0.1); color: var(--primary); }
-.orange-light { background: rgba(255, 87, 34, 0.1); color: var(--secondary); }
-.yellow-light { background: rgba(255, 193, 7, 0.1); color: var(--accent); }
+.blue-light { background: #E0F2FE; color: #0284C7; }
+.orange-light { background: #FEE2E2; color: #DC2626; }
+.yellow-light { background: #DCFCE7; color: #16A34A; }
 
 .sidebar-nav {
   margin-top: 2rem;
@@ -173,4 +173,13 @@ body {
   font-weight: 600;
   border: none;
   cursor: pointer;
+}
+
+/* Hide scrollbars globally */
+::-webkit-scrollbar {
+  display: none;
+}
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

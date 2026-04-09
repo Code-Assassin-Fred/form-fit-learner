@@ -278,9 +278,9 @@ body {
   font-size: 1.5rem;
 }
 
-.yellow-light { background: #fef3c7; color: #d97706; }
-.blue-light { background: #eff6ff; color: #3b82f6; }
-.orange-light { background: #ffedd5; color: #ea580c; }
+.yellow-light { background: #DCFCE7; color: #16A34A; }
+.blue-light { background: #E0F2FE; color: #0284C7; }
+.orange-light { background: #FEE2E2; color: #DC2626; }
 
 .stat-card h3 { margin: 0; font-size: 1.5rem; }
 .stat-card p { margin: 0; font-size: 0.875rem; color: var(--text-secondary); }

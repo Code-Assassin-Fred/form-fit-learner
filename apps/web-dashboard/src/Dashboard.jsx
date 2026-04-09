@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { auth } from './firebase';
+import React, { useState, useEffect } from 'react';
+import { auth, db } from './firebase';
 import { signOut } from 'firebase/auth';
+import { collection, onSnapshot, query } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import { 
   LogOut, LayoutDashboard, Users, Search, 
@@ -21,25 +22,36 @@ function Dashboard() {
     }
   };
 
-  const learners = [
-    { id: 1, name: 'Alice Johnson', score: '85%', status: 'Improving', class: 'Grade 5B' },
-    { id: 2, name: 'Mark Stevens', score: '42%', status: 'Critical', class: 'Therapy Hub' },
-    { id: 3, name: 'Sophia Chen', score: '92%', status: 'Excellent', class: 'Grade 5B' },
-    { id: 4, name: 'Leo Miller', score: '68%', status: 'Stable', class: 'Grade 4A' },
-  ];
+  const [learners, setLearners] = useState([]);
+  const [classes, setClasses] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const classes = [
-    { id: 1, name: 'Product Design Tutorial', instructor: 'Expert', progress: 50, status: 'On Progress', time: '08:00 - 10:00' },
-    { id: 2, name: 'Illustration Tutorial', instructor: 'Expert', progress: 80, status: 'On Progress', time: '11:00 - 12:00' },
-    { id: 3, name: 'UX Research', instructor: 'Beginner', progress: 20, status: 'On Progress', time: '15:00 - 17:00' },
-  ];
+  useEffect(() => {
+    const qLearners = query(collection(db, 'learners'));
+    const unsubLearners = onSnapshot(qLearners, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setLearners(data);
+    });
+
+    const qClasses = query(collection(db, 'classes'));
+    const unsubClasses = onSnapshot(qClasses, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setClasses(data);
+      setLoading(false);
+    });
+
+    return () => {
+      unsubLearners();
+      unsubClasses();
+    };
+  }, []);
 
   return (
     <div className="dashboard-container">
       {/* Sidebar */}
       <aside className="sidebar">
         <div className="logo-section">
-          <Zap size={32} fill="var(--primary)" color="var(--primary)" />
+          <img src="/logo.png" alt="Form-Fit Logo" style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
           <h2>Form-Fit</h2>
         </div>
         
@@ -90,7 +102,12 @@ function Dashboard() {
         </header>
 
         <div className="content-area">
-          {activeTab === 'dashboard' ? (
+          {loading ? (
+            <div className="loading-screen">
+              <div className="loader"></div>
+              <p style={{ marginTop: '1rem', color: 'var(--text-secondary)' }}>Loading Dashboard Data...</p>
+            </div>
+          ) : activeTab === 'dashboard' ? (
             <>
               <div className="banner">
                 <div className="banner-content">
