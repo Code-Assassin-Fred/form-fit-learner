@@ -1,9 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { auth, db, storage, functions } from './firebase';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { auth, storage } from './firebase';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
-import { collection, onSnapshot, query, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { httpsCallable } from 'firebase/functions';
 import { useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
@@ -13,17 +11,21 @@ import {
   LogOut, LayoutDashboard, Users, Search, 
   Settings, Bell, Zap, GraduationCap, 
   ClipboardCheck, Printer, FileText, Upload,
-  Camera, X, CheckCircle
+  Camera, X, CheckCircle, AlertCircle, Info
 } from 'lucide-react';
+
+const BACKEND_URL = 'http://localhost:3001';
 
 function Dashboard() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showAddLearner, setShowAddLearner] = useState(false);
   const [showNewAssessment, setShowNewAssessment] = useState(false);
-  const [newLearnerData, setNewLearnerData] = useState({ name: '', age: '' });
+  const [newLearnerData, setNewLearnerData] = useState({ name: '', age: '', disabilityInfo: '' });
   const [assessmentFile, setAssessmentFile] = useState(null);
   const [selectedLearnerId, setSelectedLearnerId] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
+  const [analysisStep, setAnalysisStep] = useState('');
+  const [analysisProgress, setAnalysisProgress] = useState(0);
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
@@ -34,54 +36,68 @@ function Dashboard() {
   const [assessments, setAssessments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  // Fetch all data from Admin SDK backend
+  const fetchAllData = useCallback(async (currentUser) => {
+    if (!currentUser) return;
+    try {
+      const token = await currentUser.getIdToken();
+      const headers = { 'Authorization': `Bearer ${token}` };
+
+      const [learnersRes, assessmentsRes, classesRes, tasksRes, activitiesRes] = await Promise.all([
+        fetch(`${BACKEND_URL}/api/learners`, { headers }),
+        fetch(`${BACKEND_URL}/api/assessments`, { headers }),
+        fetch(`${BACKEND_URL}/api/classes`, { headers }),
+        fetch(`${BACKEND_URL}/api/tasks`, { headers }),
+        fetch(`${BACKEND_URL}/api/activities`, { headers }),
+      ]);
+
+      if (learnersRes.ok) setLearners(await learnersRes.json());
+      if (assessmentsRes.ok) setAssessments(await assessmentsRes.json());
+      if (classesRes.ok) setClasses(await classesRes.json());
+      if (tasksRes.ok) setTasks(await tasksRes.json());
+      if (activitiesRes.ok) setActivities(await activitiesRes.json());
+    } catch (err) {
+      console.error('Failed to fetch data from backend:', err);
+      showToast(`Backend connection failed. Please ensure the local server is running on port 3001.`, 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
+    let pollInterval;
+
     const unsubAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
+
+      // Clear previous polling
+      if (pollInterval) clearInterval(pollInterval);
+
+      if (currentUser) {
+        // Initial fetch
+        fetchAllData(currentUser);
+        // Poll every 10 seconds for updates
+        pollInterval = setInterval(() => fetchAllData(currentUser), 10000);
+      } else {
+        setLoading(false);
+      }
     });
-
-    const qLearners = query(collection(db, 'learners'));
-    const unsubLearners = onSnapshot(qLearners, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setLearners(data);
-      setLoading(false); // Learners are primary data, show UI once they load
-    }, (err) => {
-      console.error("Learners load error", err);
-      setLoading(false);
-    });
-
-    const qClasses = query(collection(db, 'classes'));
-    const unsubClasses = onSnapshot(qClasses, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setClasses(data);
-    }, (err) => console.error("Classes load error", err));
-
-    const qTasks = query(collection(db, 'tasks'));
-    const unsubTasks = onSnapshot(qTasks, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setTasks(data);
-    }, (err) => console.error("Tasks load error", err));
-
-    const qActivities = query(collection(db, 'activities'));
-    const unsubActivities = onSnapshot(qActivities, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setActivities(data);
-    }, (err) => console.error("Activities load error", err));
-
-    const qAssessments = query(collection(db, 'assessments'));
-    const unsubAssessments = onSnapshot(qAssessments, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setAssessments(data);
-    }, (err) => console.error("Assessments load error", err));
 
     const timeout = setTimeout(() => setLoading(false), 5000);
 
     return () => {
-      unsubAuth(); unsubLearners(); unsubClasses(); 
-      unsubTasks(); unsubActivities(); unsubAssessments();
+      unsubAuth();
+      if (pollInterval) clearInterval(pollInterval);
       clearTimeout(timeout);
     };
-  }, []);
+  }, [fetchAllData]);
 
   const handleLogout = async () => {
     try {
@@ -90,31 +106,46 @@ function Dashboard() {
     } catch (err) { console.error('Logout failed', err); }
   };
 
+
+
   const handleAddLearner = async (e) => {
     e.preventDefault();
     if (!newLearnerData.name || !newLearnerData.age) {
-      alert("Please fill in all fields.");
+      showToast("Please fill in all fields.", 'error');
       return;
     }
     if (!user) {
-      alert("You must be logged in to add a learner.");
+      showToast("You must be logged in to add a learner.", 'error');
       return;
     }
 
     try {
-      console.log("Adding learner via Cloud Function...");
-      const addLearnerFn = httpsCallable(functions, 'addLearner');
-      await addLearnerFn({
-        name: newLearnerData.name,
-        age: newLearnerData.age
+      console.log("Adding learner via Admin SDK backend...");
+      const token = await user.getIdToken();
+      const response = await fetch(`${BACKEND_URL}/api/learners`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: newLearnerData.name,
+          age: newLearnerData.age,
+          disabilityInfo: newLearnerData.disabilityInfo,
+        }),
       });
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Failed to add learner');
       
-      setNewLearnerData({ name: '', age: '' });
+      console.log("Learner added via Admin SDK:", result.learnerId);
+      setNewLearnerData({ name: '', age: '', disabilityInfo: '' });
       setShowAddLearner(false);
-      alert("Learner added successfully!");
+      showToast("Learner added successfully!");
+      fetchAllData(user);
     } catch (err) { 
-      console.error('Failed to add learner', err); 
-      alert(`Error adding learner: ${err.message}`);
+      console.error('AddLearner Error:', err); 
+      showToast(`Error adding learner: ${err.message}`, 'error');
     }
   };
 
@@ -136,7 +167,7 @@ function Dashboard() {
       }
     } catch (err) {
       console.error("Camera access denied", err);
-      alert("Camera access denied. Please check your browser permissions.");
+      showToast("Camera access denied. Please check your browser permissions.", 'error');
       setUseCamera(false);
     }
   };
@@ -168,32 +199,90 @@ function Dashboard() {
 
   const runAssessment = async () => {
     if (!assessmentFile || !selectedLearnerId) {
-      alert("Please select a learner and provide media.");
+      showToast("Please select a learner and provide media.", 'error');
       return;
     }
+    
     setAnalyzing(true);
-    try {
-      // 1. Upload to Storage
-      const storageRef = ref(storage, `assessments/${user.uid}/${Date.now()}_${assessmentFile.name}`);
-      await uploadBytes(storageRef, assessmentFile);
-      const mediaUrl = await getDownloadURL(storageRef);
+    setAnalysisStep('Initializing...');
+    setAnalysisProgress(5);
 
-      // 2. Call Cloud Function
-      const analyzeMedia = httpsCallable(functions, 'analyzeMedia');
-      await analyzeMedia({
-        mediaUrl,
-        mediaType: assessmentFile.type.includes('video') ? 'video' : 'image',
-        learnerId: selectedLearnerId
+    try {
+      // 1. Prepare file for AI (Convert to base64)
+      setAnalysisStep('Preparing media for AI...');
+      setAnalysisProgress(10);
+      
+      const arrayBuffer = await assessmentFile.arrayBuffer();
+      const mediaBase64 = btoa(
+        new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+      );
+      const mimeType = assessmentFile.type || 'image/jpeg';
+      const mediaType = assessmentFile.type.includes('video') ? 'video' : 'image';
+
+      // 2. Call local backend for analysis
+      setAnalysisStep('Starting AI Analysis...');
+      setAnalysisProgress(15);
+      
+      const token = await user.getIdToken();
+      const response = await fetch(`${BACKEND_URL}/api/analyze`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          mediaBase64,
+          mimeType,
+          mediaType,
+          learnerId: selectedLearnerId
+        }),
       });
 
-      setAssessmentFile(null);
-      setSelectedLearnerId('');
-      setShowNewAssessment(false);
-      alert("Assessment analysis completed successfully!");
+      if (!response.ok) throw new Error('Backend failed to start analysis');
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.substring(6));
+              
+              if (data.type === 'progress') {
+                setAnalysisStep(data.message);
+                setAnalysisProgress(data.progress);
+              } else if (data.type === 'complete') {
+                console.log("Assessment completed via SSE:", data.assessmentId);
+                setAnalysisProgress(100);
+                setAnalysisStep('Analysis complete!');
+                
+                setTimeout(() => {
+                  setAssessmentFile(null);
+                  setSelectedLearnerId('');
+                  setShowNewAssessment(false);
+                  showToast('Assessment analysis completed successfully!');
+                  fetchAllData(user);
+                  setAnalyzing(false);
+                }, 1000);
+              } else if (data.type === 'error') {
+                throw new Error(data.message);
+              }
+            } catch (e) {
+              console.warn("Soft parse error for SSE chunk:", e);
+            }
+          }
+        }
+      }
     } catch (err) {
       console.error('Assessment failed', err);
-      alert(`AI Assessment Error: ${err.message}`);
-    } finally {
+      showToast(`AI Assessment Error: ${err.message}`, 'error');
       setAnalyzing(false);
     }
   };
@@ -204,6 +293,19 @@ function Dashboard() {
 
   return (
     <div className="dashboard-container">
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`toast-notification toast-${toast.type}`}>
+          <div className="toast-icon">
+            {toast.type === 'success' ? <CheckCircle size={20} /> : 
+             toast.type === 'error' ? <AlertCircle size={20} /> : 
+             <Info size={20} />}
+          </div>
+          <span className="toast-message">{toast.message}</span>
+          <button className="toast-close" onClick={() => setToast(null)}><X size={16} /></button>
+        </div>
+      )}
+
       {/* Sidebar */}
       <aside className="sidebar no-print">
         <div className="logo-section">
@@ -244,6 +346,16 @@ function Dashboard() {
             <input type="text" placeholder="Search anything..." />
           </div>
           <div className="top-bar-right">
+            <button 
+              className="icon-btn" title="Sync Data" 
+              onClick={() => {
+                showToast("Syncing data with backend...");
+                fetchAllData(user);
+              }}
+              style={{ marginRight: 12 }}
+            >
+              <Zap size={20} className={loading ? "pulse-icon" : ""} />
+            </button>
             <Bell size={20} className="header-icon" />
             <div className="user-profile-sm">
               <div className="avatar-sm">{(user?.email || 'U').charAt(0).toUpperCase()}</div>
@@ -305,15 +417,21 @@ function Dashboard() {
                   <tbody>
                     {classes.map(c => (
                       <tr key={c.id}>
-                        <td>{c.name}</td>
                         <td>
-                          <div className="progress-bar-bg">
-                            <div className="progress-bar-fill" style={{width: `${c.progress}%`}}></div>
+                          <h3 style={{fontSize: '1rem', margin: 0}}>{c.name}</h3>
+                          <p className="learner-meta" style={{margin: 0}}>Class: Main Campus</p>
+                        </td>
+                        <td>
+                          <div style={{width: '100%', backgroundColor: '#eee', height: 8, borderRadius: 4, overflow: 'hidden'}}>
+                            <div style={{width: `${c.progress || 0}%`, backgroundColor: 'var(--primary-color)', height: '100%'}}></div>
                           </div>
                         </td>
-                        <td><span className="status-badge on-progress">{c.status}</span></td>
+                        <td>
+                          <span className="status-badge on-progress">Active</span>
+                        </td>
                       </tr>
                     ))}
+                    {classes.length === 0 && <tr><td colSpan="3" style={{textAlign: 'center', padding: '20px'}}>No class data found</td></tr>}
                   </tbody>
                 </table>
               </div>
@@ -338,6 +456,11 @@ function Dashboard() {
                         type="number" placeholder="Age" className="text-input" 
                         value={newLearnerData.age} onChange={e => setNewLearnerData({...newLearnerData, age: e.target.value})} 
                       />
+                      <textarea 
+                        placeholder="Special Needs / Disability Details (e.g., No right hand, limited mobility)" className="text-input" 
+                        style={{minHeight: 80, resize: 'vertical'}}
+                        value={newLearnerData.disabilityInfo} onChange={e => setNewLearnerData({...newLearnerData, disabilityInfo: e.target.value})} 
+                      />
                       <div className="modal-actions">
                         <button type="button" className="secondary-btn-sm" onClick={() => setShowAddLearner(false)}>Cancel</button>
                         <button type="submit" className="primary-btn-sm">Save Learner</button>
@@ -352,16 +475,21 @@ function Dashboard() {
                   <div key={l.id} className="card learner-card">
                     <div className="learner-card-header">
                       <div className="avatar-md">👤</div>
-                      <span className={`status-badge ${l.status === 'Critical' ? 'critical' : 'excellent'}`}>{l.status?.toUpperCase()}</span>
                     </div>
                     <h4>{l.name}</h4>
-                    <p className="learner-meta">Age: {l.age} • {l.class}</p>
-                    <div className="learner-score">
-                      <span>Posture Score:</span>
-                      <span className={`score-value ${parseInt(l.score) < 50 ? 'low' : 'high'}`}>{l.score}</span>
+                    <p className="learner-meta">Age: {l.age}</p>
+                    <div className="learner-details" style={{marginTop: 12}}>
+                      <p style={{fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500}}>Special Needs:</p>
+                      <p style={{fontSize: '0.9rem', color: 'var(--text-primary)', marginTop: 4}}>{l.disabilityInfo || 'General Ergonomic Review'}</p>
                     </div>
                   </div>
                 ))}
+                {learners.length === 0 && (
+                  <div className="card" style={{gridColumn: '1 / -1', textAlign: 'center', padding: '40px'}}>
+                    <Users size={48} color="#ccc" style={{marginBottom: 16, margin: '0 auto'}} />
+                    <p>No learners found in Firestore. Add your first learner to get started.</p>
+                  </div>
+                )}
               </div>
             </div>
           ) : activeTab === 'assessments' ? (
@@ -423,15 +551,45 @@ function Dashboard() {
                         </div>
                       )}
 
-                      <div className="modal-actions">
-                        <button className="secondary-btn-sm" onClick={() => {setShowNewAssessment(false); setAssessmentFile(null); stopCamera();}}>Cancel</button>
-                        <button 
-                          className="primary-btn-sm" disabled={!assessmentFile || !selectedLearnerId || analyzing || useCamera}
-                          onClick={runAssessment}
-                        >
-                          {analyzing ? 'AI Analyzing...' : 'Start Analysis'}
-                        </button>
-                      </div>
+                      {analyzing ? (
+                        <div className="analysis-progress-container">
+                          <div className="analysis-progress-header">
+                            <Zap size={20} className="pulse-icon" />
+                            <span>{analysisStep}</span>
+                          </div>
+                          <div className="analysis-progress-bar-bg">
+                            <div className="analysis-progress-bar-fill" style={{ width: `${analysisProgress}%` }}></div>
+                          </div>
+                          <div className="analysis-steps-indicators">
+                            <div className={`step-dot ${analysisProgress >= 25 ? 'active' : ''}`}>
+                              {analysisProgress > 25 ? <CheckCircle size={14} /> : <div className="dot"></div>}
+                              <span>Observe</span>
+                            </div>
+                            <div className={`step-dot ${analysisProgress >= 50 ? 'active' : ''}`}>
+                              {analysisProgress > 50 ? <CheckCircle size={14} /> : <div className="dot"></div>}
+                              <span>Analyze</span>
+                            </div>
+                            <div className={`step-dot ${analysisProgress >= 75 ? 'active' : ''}`}>
+                              {analysisProgress > 75 ? <CheckCircle size={14} /> : <div className="dot"></div>}
+                              <span>Recommend</span>
+                            </div>
+                            <div className={`step-dot ${analysisProgress >= 90 ? 'active' : ''}`}>
+                              {analysisProgress >= 100 ? <CheckCircle size={14} /> : <div className="dot"></div>}
+                              <span>Finalize</span>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="modal-actions">
+                          <button className="secondary-btn-sm" onClick={() => {setShowNewAssessment(false); setAssessmentFile(null); stopCamera();}}>Cancel</button>
+                          <button 
+                            className="primary-btn-sm" disabled={!assessmentFile || !selectedLearnerId || useCamera}
+                            onClick={runAssessment}
+                          >
+                            Start Analysis
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -551,6 +709,47 @@ function Dashboard() {
       </aside>
 
       <style>{`
+        .toast-notification {
+          position: fixed;
+          top: 24px;
+          right: 24px;
+          z-index: 9999;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 14px 20px;
+          border-radius: 12px;
+          min-width: 320px;
+          max-width: 480px;
+          box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+          animation: toast-slide-in 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+          font-size: 0.95rem;
+          font-weight: 500;
+          backdrop-filter: blur(12px);
+        }
+        .toast-success {
+          background: linear-gradient(135deg, #10b981, #059669);
+          color: #fff;
+        }
+        .toast-error {
+          background: linear-gradient(135deg, #ef4444, #dc2626);
+          color: #fff;
+        }
+        .toast-info {
+          background: linear-gradient(135deg, #3b82f6, #2563eb);
+          color: #fff;
+        }
+        .toast-icon { display: flex; align-items: center; flex-shrink: 0; }
+        .toast-message { flex: 1; line-height: 1.4; }
+        .toast-close {
+          background: none; border: none; color: inherit; cursor: pointer;
+          opacity: 0.7; transition: opacity 0.2s; padding: 2px; display: flex;
+        }
+        .toast-close:hover { opacity: 1; }
+        @keyframes toast-slide-in {
+          from { transform: translateX(120%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
         .modal-overlay {
           position: fixed; top: 0; left: 0; right: 0; bottom: 0;
           background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;
@@ -568,8 +767,76 @@ function Dashboard() {
         .report-container { padding: 32px; margin-bottom: 24px; }
         .report-header { border-bottom: 2px solid #eee; padding-bottom: 16px; margin-bottom: 24px; }
         
+        .analysis-progress-container {
+          padding: 24px;
+          background: #f8fafc;
+          border-radius: 12px;
+          margin-top: 16px;
+          border: 1px solid #e2e8f0;
+        }
+        .analysis-progress-header {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 16px;
+          color: var(--primary-color);
+          font-weight: 600;
+        }
+        .pulse-icon {
+          animation: icon-pulse 2s infinite;
+        }
+        @keyframes icon-pulse {
+          0% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.2); opacity: 0.7; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        .analysis-progress-bar-bg {
+          height: 8px;
+          background: #e2e8f0;
+          border-radius: 4px;
+          overflow: hidden;
+          margin-bottom: 20px;
+        }
+        .analysis-progress-bar-fill {
+          height: 100%;
+          background: linear-gradient(90deg, #3b82f6, #60a5fa);
+          transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .analysis-steps-indicators {
+          display: flex;
+          justify-content: space-between;
+        }
+        .step-dot {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 6px;
+          flex: 1;
+          color: #94a3b8;
+          font-size: 0.75rem;
+          font-weight: 600;
+          transition: all 0.3s;
+        }
+        .step-dot.active {
+          color: var(--primary-color);
+        }
+        .step-dot .dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: #cbd5e1;
+        }
+        .step-dot.active .dot {
+          background: var(--primary-color);
+          box-shadow: 0 0 0 4px #dbeafe;
+        }
+        .step-dot svg {
+          color: #10b981;
+        }
+        
         @media print {
           .no-print { display: none !important; }
+          .toast-notification { display: none !important; }
           .main-content { margin: 0; padding: 0; width: 100%; }
           .content-area { padding: 0; }
           body { background: white; }

@@ -2,8 +2,13 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-admin.initializeApp();
+try {
+  admin.initializeApp();
+} catch (e) {
+  console.log("Admin already initialized or failed.");
+}
 
+const db = admin.firestore();
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "YOUR_API_KEY");
 
 exports.analyzeMedia = functions.https.onCall(async (data, context) => {
@@ -99,7 +104,7 @@ exports.analyzeMedia = functions.https.onCall(async (data, context) => {
       };
     }
 
-    const assessmentId = admin.firestore().collection("assessments").doc().id;
+    const assessmentId = db.collection("assessments").doc().id;
     const assessment = {
       id: assessmentId,
       learnerId: learnerId || "unknown",
@@ -114,7 +119,7 @@ exports.analyzeMedia = functions.https.onCall(async (data, context) => {
       status: "completed"
     };
 
-    await admin.firestore().collection("assessments").doc(assessmentId).set(assessment);
+    await db.collection("assessments").doc(assessmentId).set(assessment);
 
     return { assessmentId, status: "success", assessment };
   } catch (error) {
@@ -124,32 +129,42 @@ exports.analyzeMedia = functions.https.onCall(async (data, context) => {
 });
 
 exports.addLearner = functions.https.onCall(async (data, context) => {
+  // Check auth
   if (!context.auth) {
     throw new functions.https.HttpsError("unauthenticated", "User must be logged in.");
   }
 
   const { name, age } = data;
-  if (!name || !age) {
+  if (!name || age === undefined) {
     throw new functions.https.HttpsError("invalid-argument", "Name and age are required.");
   }
 
   try {
-    const learnerRef = admin.firestore().collection("learners").doc();
-    const learner = {
-      id: learnerRef.id,
+    console.log(`[addLearner] START: ${name}, age: ${age}`);
+    
+    if (!db) {
+      throw new Error("Firestore DB NOT INITIALIZED in Cloud Function");
+    }
+
+    const learnerRef = db.collection("learners").doc();
+    const learnerId = learnerRef.id;
+
+    await learnerRef.set({
+      id: learnerId,
       userId: context.auth.uid,
-      name,
+      name: String(name),
       age: parseInt(age),
       status: 'Excellent',
       score: '100%',
       class: 'Main Campus',
       createdAt: admin.firestore.FieldValue.serverTimestamp()
-    };
+    });
 
-    await learnerRef.set(learner);
-    return { status: "success", learnerId: learnerRef.id };
+    console.log(`[addLearner] SUCCESS: ${learnerId}`);
+    return { status: "success", learnerId };
   } catch (error) {
-    console.error("Error adding learner via Admin SDK:", error);
-    throw new functions.https.HttpsError("internal", error.message);
+    console.error("CRITICAL ERROR in addLearner:", error);
+    // Use 'failed-precondition' instead of 'internal' to see if it bypasses SDK swallowing
+    throw new functions.https.HttpsError("failed-precondition", `Learner creation failed: ${error.message}`);
   }
 });
