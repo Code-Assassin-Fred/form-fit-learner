@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'dart:io';
 
 class AssessmentScreen extends StatefulWidget {
@@ -34,20 +37,56 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
       _isUploading = true;
     });
 
-    // Mock delay for analysis
-    await Future.delayed(const Duration(seconds: 4));
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) throw Exception('Must be logged in to assess');
 
-    if (mounted) {
-      setState(() {
-        _isUploading = false;
+      // Upload to Storage
+      final String fileName = '${DateTime.now().millisecondsSinceEpoch}_${_mediaFile!.name}';
+      final String destination = 'users/${user.uid}/media/$fileName';
+      
+      final File uploadFile = File(_mediaFile!.path);
+      final ref = FirebaseStorage.instance.ref(destination);
+      await ref.putFile(uploadFile);
+      
+      final String downloadUrl = await ref.getDownloadURL();
+
+      // Call Cloud Function
+      final result = await FirebaseFunctions.instance.httpsCallable('analyzeMedia').call({
+        'mediaUrl': downloadUrl,
+        'mediaType': uploadFile.path.endsWith('.mp4') ? 'video' : 'image',
+        'learnerId': 'auto-generated', // For MVP
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('AI Analysis Complete!'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      // Navigation would go here in a real app
+
+      if (mounted) {
+        final analysis = result.data['assessment']['analysisResults'];
+        final tool = result.data['assessment']['recommendedToolId'];
+        
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Analysis Complete'),
+            content: Text('Issue: ${analysis['issue']}\n\nRecommended: ${tool.replaceAll('_', ' ')}'),
+            actions: [
+              TextButton(
+                onPressed: () { 
+                  Navigator.pop(context);
+                  Navigator.pop(context); // Go back after success
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isUploading = false);
     }
   }
 

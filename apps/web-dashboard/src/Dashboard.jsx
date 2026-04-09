@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { auth, db } from './firebase';
-import { signOut } from 'firebase/auth';
+import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { collection, onSnapshot, query } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -24,13 +24,24 @@ function Dashboard() {
 
   const [learners, setLearners] = useState([]);
   const [classes, setClasses] = useState([]);
+  const [tasks, setTasks] = useState([]);
+  const [activities, setActivities] = useState([]);
+  const [assessments, setAssessments] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [user, setUser] = useState(null);
+
   useEffect(() => {
+    const unsubAuth = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+
     const qLearners = query(collection(db, 'learners'));
     const unsubLearners = onSnapshot(qLearners, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setLearners(data);
+    }, (error) => {
+      console.error("Error fetching learners: ", error);
     });
 
     const qClasses = query(collection(db, 'classes'));
@@ -38,11 +49,48 @@ function Dashboard() {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setClasses(data);
       setLoading(false);
+    }, (error) => {
+      console.error("Error fetching classes: ", error);
+      setLoading(false);
     });
 
+    const qTasks = query(collection(db, 'tasks'));
+    const unsubTasks = onSnapshot(qTasks, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setTasks(data);
+    }, (error) => {
+      console.error("Error fetching tasks: ", error);
+    });
+
+    const qActivities = query(collection(db, 'activities'));
+    const unsubActivities = onSnapshot(qActivities, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setActivities(data);
+    }, (error) => {
+      console.error("Error fetching activities: ", error);
+    });
+
+    const qAssessments = query(collection(db, 'assessments'));
+    const unsubAssessments = onSnapshot(qAssessments, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setAssessments(data);
+    }, (error) => {
+      console.error("Error fetching assessments: ", error);
+    });
+
+    // Provide a fallback to disable loading state if everything fails.
+    const loadingTimeout = setTimeout(() => {
+      setLoading(false);
+    }, 3000);
+
     return () => {
+      unsubAuth();
       unsubLearners();
       unsubClasses();
+      unsubTasks();
+      unsubActivities();
+      unsubAssessments();
+      clearTimeout(loadingTimeout);
     };
   }, []);
 
@@ -95,8 +143,8 @@ function Dashboard() {
           <div className="top-bar-right">
             <Bell size={20} className="header-icon" />
             <div className="user-profile-sm">
-              <div className="avatar-sm">S</div>
-              <span className="user-name">Selena</span>
+              <div className="avatar-sm">{(user?.email || 'U').charAt(0).toUpperCase()}</div>
+              <span className="user-name">{user?.email?.split('@')[0] || 'User'}</span>
             </div>
           </div>
         </header>
@@ -122,21 +170,21 @@ function Dashboard() {
                 <div className="card stat-card">
                   <div className="icon-box yellow-light"><GraduationCap size={24} /></div>
                   <div>
-                    <h3>124</h3>
+                    <h3>{learners.length}</h3>
                     <p>Total Learners</p>
                   </div>
                 </div>
                 <div className="card stat-card">
                   <div className="icon-box blue-light"><Search size={24} /></div>
                   <div>
-                    <h3>42</h3>
+                    <h3>{assessments.filter(a => a.status === 'pending').length}</h3>
                     <p>Pending Analysis</p>
                   </div>
                 </div>
                 <div className="card stat-card">
                   <div className="icon-box orange-light"><Printer size={24} /></div>
                   <div>
-                    <h3>85</h3>
+                    <h3>{assessments.length}</h3>
                     <p>Prints Completed</p>
                   </div>
                 </div>
@@ -209,12 +257,81 @@ function Dashboard() {
                 ))}
               </div>
             </div>
+          ) : activeTab === 'assessments' ? (
+            <div className="assessments-page">
+              <div className="page-header">
+                <h2>AI Assessments</h2>
+              </div>
+              <div className="card recent-activity">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Media</th>
+                      <th>Learner ID</th>
+                      <th>Issue</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {assessments.length > 0 ? assessments.map(a => (
+                      <tr key={a.id}>
+                        <td>
+                          {a.mediaType === 'image' 
+                            ? <img src={a.mediaUrl} alt="Assessment" style={{width: 60, height: 60, borderRadius: 8, objectFit: 'cover'}} /> 
+                            : '📹 Video'}
+                        </td>
+                        <td>{a.learnerId}</td>
+                        <td>{a.analysisResults?.issue || 'Pending'}</td>
+                        <td><span className={`status-badge ${a.status === 'completed' ? 'excellent' : 'on-progress'}`}>{a.status}</span></td>
+                      </tr>
+                    )) : <tr><td colSpan="4" style={{textAlign: 'center', padding: '20px'}}>No assessments yet</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : activeTab === 'tools' ? (
+            <div className="tools-page">
+              <div className="page-header">
+                <h2>3D Printed Assistive Tools</h2>
+              </div>
+              <div className="learners-grid">
+                {assessments.filter(a => a.recommendedToolId).map(a => (
+                  <div key={`tool-${a.id}`} className="card learner-card">
+                    <div className="learner-card-header">
+                      <div className="avatar-md">🖨️</div>
+                    </div>
+                    <h4>{a.recommendedToolId.replace('_', ' ')}</h4>
+                    <p className="learner-meta">For Learner: {a.learnerId}</p>
+                    <div className="learner-score" style={{marginTop: 16}}>
+                      <button className="primary-btn-sm" style={{width: '100%'}}>Download STL</button>
+                    </div>
+                  </div>
+                ))}
+                {assessments.filter(a => a.recommendedToolId).length === 0 && <p>No tools recommended yet.</p>}
+              </div>
+            </div>
+          ) : activeTab === 'reports' ? (
+            <div className="reports-page">
+              <div className="page-header">
+                <h2>AI Ergonomic Reports</h2>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {assessments.map(a => (
+                  <div key={`report-${a.id}`} className="card" style={{padding: '24px'}}>
+                    <h3 style={{marginBottom: '12px'}}>Report for {a.learnerId}</h3>
+                    <p style={{lineHeight: 1.6, color: 'var(--text-secondary)'}}>{a.reportSummary || 'Generating report...'}</p>
+                  </div>
+                ))}
+                {assessments.length === 0 && <p>No reports generated yet.</p>}
+              </div>
+            </div>
           ) : (
             <div className="card empty-state">
               <h2>Coming Soon</h2>
               <p>This module is currently under development.</p>
             </div>
           )}
+
         </div>
       </main>
 
@@ -223,8 +340,8 @@ function Dashboard() {
         <h3>My profile</h3>
         <div className="profile-section">
           <div className="avatar-lg">👩‍💻</div>
-          <h3>Adeline Watson</h3>
-          <p className="profile-meta">Basic Member ⭐</p>
+          <h3>{user?.email?.split('@')[0] || 'User'}</h3>
+          <p className="profile-meta">{user?.email || 'Basic Member ⭐'}</p>
         </div>
 
         <div className="activity-section">
@@ -235,29 +352,32 @@ function Dashboard() {
             </select>
           </div>
           <div className="chart-bar-container">
-            {[40, 70, 45, 90, 65, 30, 80].map((h, i) => (
-              <div key={i} className={`chart-bar ${i === 3 ? 'active' : ''}`} style={{height: `${h}%`}}></div>
-            ))}
+            {activities.length > 0 ? (
+              activities.map((activity, i) => (
+                <div key={i} className={`chart-bar ${i === 3 ? 'active' : ''}`} style={{height: `${activity.value || 0}%`}}></div>
+              ))
+            ) : (
+              <p style={{textAlign: 'center', width: '100%', color: 'var(--text-secondary)'}}>No activity data</p>
+            )}
           </div>
         </div>
 
         <div className="tasks-section">
           <h4>List Task</h4>
           <div className="task-list">
-            <div className="card task-card">
-              <div className="task-icon">👩‍💻</div>
-              <div>
-                <p className="task-title">Make user flow</p>
-                <p className="task-due">Due date 14 Nov, 05:45</p>
-              </div>
-            </div>
-            <div className="card task-card">
-              <div className="task-icon">✍️</div>
-              <div>
-                <p className="task-title">Basic shape</p>
-                <p className="task-due">Due date 13 Nov, 20:00</p>
-              </div>
-            </div>
+            {tasks.length > 0 ? (
+              tasks.map(task => (
+                <div key={task.id} className="card task-card">
+                  <div className="task-icon">{task.icon || '📌'}</div>
+                  <div>
+                    <p className="task-title">{task.title}</p>
+                    <p className="task-due">{task.dueDate}</p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p style={{textAlign: 'center', color: 'var(--text-secondary)'}}>No tasks available</p>
+            )}
           </div>
         </div>
       </aside>

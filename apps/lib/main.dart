@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'firebase_options.dart';
 import 'screens/assessment_screen.dart';
+import 'screens/login_screen.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -49,7 +52,27 @@ class FormFitApp extends StatelessWidget {
           color: Colors.white,
         ),
       ),
-      home: const MainNavigationWrapper(),
+      home: const AuthWrapper(),
+    );
+  }
+}
+
+class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+        if (snapshot.hasData && snapshot.data != null) {
+          return const MainNavigationWrapper();
+        }
+        return const LoginScreen();
+      },
     );
   }
 }
