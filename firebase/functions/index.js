@@ -24,7 +24,7 @@ exports.analyzeMedia = functions.https.onCall(async (data, context) => {
   }
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     // Download the image buffer using Node 18 fetch
     const response = await fetch(mediaUrl);

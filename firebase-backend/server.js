@@ -56,7 +56,7 @@ admin.initializeApp({
 
 const db = admin.firestore();
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
 const app = express();
 
@@ -244,15 +244,18 @@ Analysis: "${analysis}"
 
 Your task:
 1. Recommend exactly ONE specific 3D printable assistive tool tailored to this learner's specific disability (e.g., custom pen stabilizer for missing fingers, foot-operated input, specialized grip).
-2. Generate a comprehensive Inclusive Ergonomic Report in LaTeX format.
+2. Generate a comprehensive Inclusive Ergonomic Report in Markdown format with LaTeX for measurements.
 3. Ensure the solution directly addresses the observed physical limitation.
 
-The LaTeX report should use sections like \\section{Learner Profile}, \\section{Physical Barriers}, \\section{Recommended Adaptation}, etc.
-Use LaTeX for any measurements or geometric notations.
+The report should use Markdown for structure:
+- Use # for the main title (e.g., # Inclusive Ergonomic Report).
+- Use ## for sections (e.g., ## Learner Profile, ## Physical Barriers, ## Recommendations).
+- Use ### for subsections.
+- Use ALWAYS use LaTeX in $...$ or $$...$$ for any measurements, angles, or geometric notations (e.g., $45^{\circ}$, $15cm$).
 
 Output a JSON object with exactly these keys:
 - "issue": Short name of the primary challenge identified.
-- "details": The LaTeX formatted report content.
+- "details": The Markdown + LaTeX formatted report content.
 - "recommendedToolId": A machine-friendly ID for the tool (e.g., "adaptive_grip_v1").
 - "toolDescription": Simple name for the assistive tool.
 - "category": One of: 'grip', 'posture', 'stability', 'accessibility'.`;

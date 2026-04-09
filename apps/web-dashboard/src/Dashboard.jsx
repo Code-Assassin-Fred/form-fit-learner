@@ -37,6 +37,22 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [toast, setToast] = useState(null);
+  const [expandedReportId, setExpandedReportId] = useState(null);
+
+  // Helper: Clean up LaTeX boilerplate if present
+  const cleanReportContent = (content) => {
+    if (!content) return '';
+    // If it's a full LaTeX document, try to extract only the body or part of it
+    // Often models start with \documentclass or include preamble
+    return content
+      .replace(/\\documentclass\{[\s\S]*?\\begin\{document\}/g, '')
+      .replace(/\\end\{document\}/g, '')
+      .replace(/\\title\{[\s\S]*?\}/g, '')
+      .replace(/\\author\{[\s\S]*?\}/g, '')
+      .replace(/\\date\{[\s\S]*?\}/g, '')
+      .replace(/\\maketitle/g, '')
+      .trim();
+  };
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -595,27 +611,54 @@ function Dashboard() {
                 </div>
               )}
 
-              <div className="card recent-activity no-print">
-                <table className="data-table">
-                  <thead>
-                    <tr><th>Media</th><th>Learner</th><th>Issue</th><th>Status</th></tr>
-                  </thead>
-                  <tbody>
-                    {assessments.map(a => (
-                      <tr key={a.id}>
-                        <td>
-                          {a.mediaType === 'image' 
-                            ? <img src={a.mediaUrl} alt="Assessment" style={{width: 60, height: 60, borderRadius: 8, objectFit: 'cover'}} /> 
-                            : '📹 Video'}
-                        </td>
-                        <td>{learners.find(l => l.id === a.learnerId)?.name || 'Unknown'}</td>
-                        <td>{a.analysisResults?.issue || 'Pending'}</td>
-                        <td><span className={`status-badge ${a.status === 'completed' ? 'excellent' : 'on-progress'}`}>{a.status}</span></td>
+              <div className="card assessment-log-card no-print">
+                <div className="card-header">
+                  <h3>Assessment History</h3>
+                  <span className="badge-count">{assessments.length} Records</span>
+                </div>
+                <div className="table-wrapper">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th style={{ width: '80px' }}>Media</th>
+                        <th style={{ width: '150px' }}>Learner</th>
+                        <th>Analysis Finding</th>
+                        <th style={{ width: '120px', textAlign: 'right' }}>Status</th>
                       </tr>
-                    ))}
-                    {assessments.length === 0 && <tr><td colSpan="4" style={{textAlign: 'center', padding: '20px'}}>No assessments yet</td></tr>}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {assessments.map(a => (
+                        <tr key={a.id} className="assessment-row">
+                          <td>
+                            <div className="media-preview-container">
+                              {a.mediaType === 'image' 
+                                ? <img src={a.mediaUrl} alt="Assessment" className="media-thumb" /> 
+                                : <div className="video-icon-placeholder">📹</div>}
+                            </div>
+                          </td>
+                          <td>
+                            <div className="learner-info">
+                              <span className="learner-name">{learners.find(l => l.id === a.learnerId)?.name || 'Unknown'}</span>
+                              <span className="learner-id-tag">#{a.learnerId.substring(0, 5)}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <div className="issue-details">
+                              <p className="issue-text">{a.analysisResults?.issue || 'Analysis pending...'}</p>
+                              {a.toolDescription && <span className="tool-suggestion">Rec: {a.toolDescription}</span>}
+                            </div>
+                          </td>
+                          <td style={{ textAlign: 'right' }}>
+                            <span className={`status-badge-new ${a.status === 'completed' ? 'status-completed' : 'status-pending'}`}>
+                              {a.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                      {assessments.length === 0 && <tr><td colSpan="4" style={{textAlign: 'center', padding: '40px', color: '#888'}}>No assessments found.</td></tr>}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           ) : activeTab === 'tools' ? (
@@ -645,29 +688,53 @@ function Dashboard() {
                 <button className="primary-btn-sm" onClick={handlePrint}><Printer size={16} /> Print All Reports</button>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-                {assessments.map(a => (
-                  <div key={`report-${a.id}`} className="report-container card">
-                    <div className="report-header">
-                      <h3>Report: {learners.find(l => l.id === a.learnerId)?.name}</h3>
-                      <p>{new Date(a.timestamp?.seconds * 1000).toLocaleDateString()}</p>
-                    </div>
-                    <div className="report-content latex-content">
-                      <ReactMarkdown 
-                        remarkPlugins={[remarkMath]} 
-                        rehypePlugins={[rehypeKatex]}
+                {assessments.filter(a => a.status === 'completed').map(a => {
+                  const isExpanded = expandedReportId === a.id;
+                  const date = a.timestamp?.seconds ? new Date(a.timestamp.seconds * 1000).toLocaleDateString() : 'Recent';
+                  
+                  return (
+                    <div key={`report-${a.id}`} className={`report-container card ${isExpanded ? 'expanded' : ''}`}>
+                      <div 
+                        className="report-header clickable" 
+                        onClick={() => setExpandedReportId(isExpanded ? null : a.id)}
                       >
-                        {a.reportSummary || 'Generating report...'}
-                      </ReactMarkdown>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          <div className="icon-box blue-light" style={{ padding: 8 }}>
+                            <FileText size={18} />
+                          </div>
+                          <div>
+                            <h3>Report: {learners.find(l => l.id === a.learnerId)?.name || 'Unknown Learner'}</h3>
+                            <p className="report-meta">{date} • {a.analysisResults?.issue || 'Ergonomic Review'}</p>
+                          </div>
+                        </div>
+                        <button className="expand-toggle">
+                          {isExpanded ? <X size={20} /> : <Zap size={20} />}
+                        </button>
+                      </div>
+                      
+                      {isExpanded && (
+                        <>
+                          <div className="report-content latex-content">
+                            <ReactMarkdown 
+                              remarkPlugins={[remarkMath]} 
+                              rehypePlugins={[rehypeKatex]}
+                            >
+                              {cleanReportContent(a.reportSummary || 'Generating report...')}
+                            </ReactMarkdown>
+                          </div>
+                          <div className="report-footer no-print">
+                            <button className="primary-btn-sm" onClick={(e) => {
+                              e.stopPropagation();
+                              const win = window.open('', '_blank');
+                              win.document.write(`<html><head><title>Report</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css"></head><body>${document.querySelector('.latex-content').innerHTML}</body></html>`);
+                              win.print();
+                            }}>Print This Report</button>
+                          </div>
+                        </>
+                      )}
                     </div>
-                    <div className="report-footer no-print">
-                      <button className="secondary-btn-sm" onClick={() => {
-                        const win = window.open('', '_blank');
-                        win.document.write(`<html><head><title>Report</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css"></head><body>${document.querySelector('.latex-content').innerHTML}</body></html>`);
-                        win.print();
-                      }}>Print This Report</button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ) : null}
@@ -832,6 +899,50 @@ function Dashboard() {
         }
         .step-dot svg {
           color: #10b981;
+        }
+
+        /* --- Premium Assessment & Report Styling --- */
+        .assessment-log-card { padding: 0; overflow: hidden; }
+        .assessment-log-card .card-header { padding: 20px 24px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
+        .badge-count { background: #f0f4f8; color: #555; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+        .table-wrapper { overflow-x: auto; }
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th { text-align: left; padding: 16px 24px; background: #fafafa; color: #666; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .data-table td { padding: 16px 24px; border-top: 1px solid #f0f0f0; vertical-align: middle; }
+        .assessment-row:hover { background: #fcfcfc; }
+        
+        .media-preview-container { width: 48px; height: 48px; border-radius: 8px; overflow: hidden; border: 1px solid #eef; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .media-thumb { width: 100%; height: 100%; object-fit: cover; transition: transform 0.2s; }
+        .media-thumb:hover { transform: scale(1.1); }
+        .video-icon-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #f0f0f0; font-size: 1.2rem; }
+        
+        .learner-info { display: flex; flex-direction: column; gap: 2px; }
+        .learner-name { font-weight: 600; color: #333; font-size: 0.95rem; }
+        .learner-id-tag { font-size: 0.7rem; color: #999; font-family: monospace; }
+        
+        .issue-details { display: flex; flex-direction: column; gap: 4px; }
+        .issue-text { margin: 0; color: #444; font-size: 0.95rem; line-height: 1.4; }
+        .tool-suggestion { display: inline-block; font-size: 0.75rem; background: #fff8e1; color: #f57f17; padding: 2px 8px; border-radius: 4px; font-weight: 500; border: 1px solid #ffecb3; width: fit-content; }
+        
+        .status-badge-new { padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .status-completed { background: #e6f7ef; color: #008a4e; }
+        .status-pending { background: #fff4e6; color: #d97706; }
+
+        .latex-content { font-family: 'Inter', sans-serif; line-height: 1.8; color: #333; }
+        .report-container { border-radius: 12px; background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #eee; overflow: hidden; margin-bottom: 20px; transition: all 0.3s ease; }
+        .report-container.expanded { border-color: var(--primary-color); box-shadow: 0 15px 40px rgba(0,0,0,0.12); margin-bottom: 30px; }
+        .report-header.clickable { background: #f8fafc; padding: 20px 32px; border-bottom: 1px solid transparent; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background 0.2s; }
+        .report-container.expanded .report-header.clickable { border-bottom: 1px solid #edf2f7; background: #fff; }
+        .report-header.clickable:hover { background: #f1f5f9; }
+        .report-header h3 { margin: 0; color: #1a202c; font-size: 1.1rem; }
+        .report-meta { margin: 4px 0 0 0; color: #718096; font-size: 0.85rem; }
+        .expand-toggle { background: #f1f5f9; border: none; color: #64748b; cursor: pointer; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .report-container.expanded .expand-toggle { background: var(--primary-color); color: white; transform: rotate(180deg); }
+        .report-content { padding: 32px; animation: slideDown 0.3s ease-out; }
+        .report-footer { padding: 16px 32px; background: #fdfdfd; border-top: 1px solid #f7f7f7; }
+        @keyframes slideDown {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
         }
         
         @media print {
