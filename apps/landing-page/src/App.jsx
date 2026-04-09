@@ -1,129 +1,172 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
 
 function App() {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
     <div className="landing-page">
       {/* Navigation */}
-      <nav className="navbar">
+      <nav className={`navbar ${scrolled ? 'glass-nav' : ''}`}>
         <div className="nav-container">
           <div className="logo-section">
             <img src="/logo.png" alt="Form-Fit Learner Logo" className="logo" />
             <span className="logo-text">Form-Fit Learner</span>
           </div>
           <div className="nav-links">
-            <a href="#features">Features</a>
-            <a href="#how-it-works">How it Works</a>
-            <a href="#about">About</a>
+            <a href="#mission" className="nav-link">Mission</a>
+            <a href="#features" className="nav-link">Features</a>
+            <a href="#creator" className="nav-link">About</a>
             <button 
               className="btn btn-outline" 
-              style={{padding: '8px 20px'}}
+              style={{padding: '8px 24px', fontSize: '0.9rem'}}
               onClick={() => window.location.href = 'http://localhost:5174/login'}
             >
               Sign In
             </button>
-            <button className="btn btn-accent" style={{padding: '8px 24px'}}>Get App</button>
+            <button 
+              className="btn btn-primary" 
+              style={{padding: '8px 28px', fontSize: '0.9rem', color: '#000', background: '#fff'}}
+            >
+              Get App
+            </button>
           </div>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <header className="hero">
-        <div className="hero-content">
-          <div className="hero-text-area">
-            <h1 className="hero-title">
-              Personalized Ergonomics. <br />
-              <span className="gradient-text">AI-Driven Comfort.</span>
-            </h1>
-            <p className="hero-subtitle">
-              We use advanced AI to analyze learning postures and generate custom, 3D-printable 
-              assistive tools. Empowering every learner to reach their full potential.
-            </p>
-            <div className="hero-ctas">
-              <button className="btn btn-primary">Start New Assessment</button>
-              <button className="btn btn-outline">Watch Video</button>
-            </div>
-            <div className="hero-stats">
-              <div className="stat-item">
-                <span className="stat-value">98%</span>
-                <span className="stat-label">Accuracy</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-value">500+</span>
-                <span className="stat-label">Tools Printed</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-value">24h</span>
-                <span className="stat-label">Design Turnaround</span>
-              </div>
-            </div>
-          </div>
-          <div className="hero-visual">
-            <div className="glass-card hero-card">
-              <img src="/hero-placeholder.png" alt="AI Ergonomic Analysis" className="hero-img" />
-              <div className="floating-badge top-right">
-                <span className="badge-icon">✨</span>
-                <span className="badge-text">AI Analysis Active</span>
-              </div>
-            </div>
+      <header className="hero section-padding">
+        <h1 className="hero-title">
+          Inclusive Classrooms.<span className="accent-star">*</span><br />
+          <span className="gradient-primary">AI-Driven Comfort.</span>
+        </h1>
+        <p className="hero-subtitle">
+          Advanced AI analyzes learning postures to generate custom, 3D-printable assistive tools. Empowering every learner to reach their full potential without the wait.
+        </p>
+        <div className="hero-ctas">
+          <button className="btn btn-accent">Start Assessment Free</button>
+          <button className="btn btn-outline">See How It Works ↗</button>
+        </div>
+        
+        <div className="hero-visual">
+          <div className="hero-mockup" style={{ overflow: 'hidden', borderRadius: '24px', border: '1px solid var(--glass-border)' }}>
+             <img src="/hero-african.png" alt="Dashboard Mockup" style={{ width: '100%', height: 'auto', display: 'block' }} />
           </div>
         </div>
       </header>
 
-      {/* How It Works Section */}
-      <section id="how-it-works" className="how-it-works">
-        <div className="section-header">
-          <h2 className="section-title">From Assessment to Assistive Tool</h2>
-          <p className="section-subtitle">A seamless 4-step process powered by Gemini AI.</p>
+      {/* Logo Banner Section */}
+      <div className="logo-banner">
+        <div className="banner-text">
+          <span className="stars">★★★★★</span>
+          Trusted by pioneering educators
         </div>
-        <div className="steps-container">
-          <div className="step-item">
-            <div className="step-number">01</div>
-            <h4>Capture</h4>
-            <p>Record a short video of the learner's classroom activity via our mobile app.</p>
+        <div className="marquee-container">
+          <div className="marquee">
+            <span>Stanford Prep</span>
+            <span>Oakville Districts</span>
+            <span>SpecialEd Tech</span>
+            <span>NYC Public Schools</span>
+            <span>EdTech Innovators</span>
+            {/* Duplicated for smooth infinite scroll */}
+            <span>Stanford Prep</span>
+            <span>Oakville Districts</span>
+            <span>SpecialEd Tech</span>
+            <span>NYC Public Schools</span>
+            <span>EdTech Innovators</span>
           </div>
-          <div className="step-arrow">→</div>
-          <div className="step-item">
-            <div className="step-number">02</div>
-            <h4>Analyze</h4>
-            <p>Our AI identifies ergonomic barriers and calculates precise adjustment needs.</p>
+        </div>
+      </div>
+
+      {/* Mission / Problem Section (SharingMe style) */}
+      <section id="mission" className="section-padding">
+        <div className="mission-section">
+          <div className="mission-content">
+            <h2>One assessment.<br/><span>Endless potential.</span></h2>
+            <p>
+              Traditional ergonomic tools are expensive, slow to arrive, and rarely fit perfectly. A growing student needs solutions that adapt as fast as they do.
+            </p>
+            <p>
+              By combining mobile video capture with generative AI, we skip the supply chain entirely. What used to take months now takes minutes. From classroom recording directly to your school's 3D printer.
+            </p>
+            <button className="btn btn-primary" style={{marginTop: '20px'}}>Read the Whitepaper</button>
           </div>
-          <div className="step-arrow">→</div>
-          <div className="step-item">
-            <div className="step-number">03</div>
-            <h4>Generate</h4>
-            <p>Instantly receive a custom 3D-printable STL blueprint tailored to the student.</p>
-          </div>
-          <div className="step-arrow">→</div>
-          <div className="step-item">
-            <div className="step-number">04</div>
-            <h4>Print</h4>
-            <p>Download the file and output the assistive tool on any standard 3D printer.</p>
+          <div className="mission-visual">
+             <img src="/Image 2.jpg" alt="Mobile App Mockup" className="mockup-img" />
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section id="features" className="features">
-        <div className="section-header">
-          <h2 className="section-title">Why Form-Fit Learner?</h2>
-          <p className="section-subtitle">Cutting-edge technology meets empathetic design.</p>
+      {/* Features Bento Grid */}
+      <section id="features" className="section-padding">
+        <div className="features-header">
+          <h2>Generative design, simplified.</h2>
+          <p style={{color: 'var(--text-muted)', fontSize: '1.2rem'}}>Everything you need to support your students' physical needs.</p>
         </div>
-        <div className="features-grid">
-          <div className="feature-card glass-card">
-            <div className="feature-icon orange-bg">🤖</div>
-            <h3>AI-Driven Analysis</h3>
-            <p>Our proprietary algorithms identify physical learning barriers from simple video captures in real-time.</p>
+        
+        <div className="bento-grid">
+          {/* Card 1: Large */}
+          <div className="glass-card bento-item large">
+            <div className="bento-content">
+              <h3>Proprietary AI Kinematic Analysis</h3>
+              <p>Our algorithms identify physical learning barriers from simple video captures in real-time, calculating precise anatomical adjustments.</p>
+            </div>
+            <div className="feature-visual">
+               <div className="abstract-shape"></div>
+            </div>
           </div>
-          <div className="feature-card glass-card">
-            <div className="feature-icon blue-bg">🖨️</div>
-            <h3>Generative 3D Design</h3>
-            <p>Automatically convert assessment data into custom STL blueprints for 3D-printable assistive tools.</p>
+          
+          {/* Card 2: Tall */}
+          <div className="glass-card bento-item tall">
+            <div className="bento-content">
+              <h3 style={{color: 'var(--secondary)'}}>Instant STLs</h3>
+              <p>Automatically convert assessment data into custom STL blueprints ready for any standard 3D printer.</p>
+            </div>
           </div>
-          <div className="feature-card glass-card">
-            <div className="feature-icon yellow-bg">🏫</div>
-            <h3>Inclusive Classrooms</h3>
-            <p>Scalable solutions for educators to provide mass personalization for students with diverse needs.</p>
+          
+          {/* Card 3: Standard */}
+          <div className="glass-card bento-item">
+            <div className="bento-content">
+              <h3 style={{color: 'var(--accent)'}}>FERPA Compliant</h3>
+              <p>Enterprise-grade security ensures all student video data is processed anonymously and securely.</p>
+            </div>
+          </div>
+          
+          {/* Card 4: Standard */}
+          <div className="glass-card bento-item">
+            <div className="bento-content">
+              <h3>Mass Personalization</h3>
+              <p>Scalable software solutions for special-ed departments to provide individualized tools at scale.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Creator Section */}
+      <section id="creator" className="section-padding creator-section">
+        <div className="creator-grid">
+          <div className="creator-image-wrapper">
+            <img src="/Image 5.png" alt="Creator Portrait" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          </div>
+          <div className="creator-info">
+            <h2>Built for the 1 in 5.</h2>
+            <p>
+              As a former educator, I spent countless hours watching brilliant students struggle with generic classroom furniture. Standardized tools fail to address the nuance of individual physical needs.
+            </p>
+            <p>
+              I built Form-Fit to bridge the gap between cutting-edge AI and practical classroom reality.
+            </p>
+            <div className="creator-quote">
+              "We're not just 3D printing plastic. We're printing access, comfort, and focus."
+              <br/><br/>
+              <strong style={{color: 'var(--primary)'}}>- The Founder</strong>
+            </div>
           </div>
         </div>
       </section>
@@ -140,7 +183,7 @@ function App() {
               <h4>Product</h4>
               <a href="#">Dashboard</a>
               <a href="#">Mobile App</a>
-              <a href="#">iOS App</a>
+              <a href="#">3D Print Library</a>
             </div>
             <div className="link-group">
               <h4>Company</h4>
