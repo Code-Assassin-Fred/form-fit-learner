@@ -44,6 +44,8 @@ dependencies:
     path: ../packages/ai_module
   stl_generator:
     path: ../packages/stl_generator
+  google_fonts: ^8.0.2
+  flutter_animate: ^4.5.2
 
 dev_dependencies:
   flutter_test:
