@@ -341,6 +341,25 @@ function Dashboard() {
     window.print();
   };
 
+  const handleDownloadSTL = (toolId, toolName) => {
+    // In a real app, this would fetch from a server or bucket.
+    // For this prototype, we'll try to find the specific file or fallback to sample.
+    const fileName = toolId ? `${toolId}.stl` : 'sample_tool.stl';
+    const filePath = `/tools/${fileName}`;
+    
+    // Check if we should fallback to sample for the demo
+    const downloadUrl = toolId === 'adaptive_grip_v1' ? '/tools/sample_tool.stl' : filePath;
+
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showToast(`Downloading ${toolName || '3D Tool'}...`);
+  };
+
   return (
     <div className="dashboard-container">
       {/* Toast Notification */}
@@ -709,7 +728,13 @@ function Dashboard() {
                     <h4>{a.toolDescription || a.recommendedToolId.replace('_', ' ')}</h4>
                     <p className="learner-meta">For: {learners.find(l => l.id === a.learnerId)?.name}</p>
                     <div className="learner-score" style={{marginTop: 16}}>
-                      <button className="primary-btn-sm" style={{width: '100%'}}>Download STL</button>
+                      <button 
+                        className="primary-btn-sm" 
+                        style={{width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'}}
+                        onClick={() => handleDownloadSTL(a.recommendedToolId, a.toolDescription)}
+                      >
+                        <Printer size={16} /> Download STL
+                      </button>
                     </div>
                   </div>
                 ))}
