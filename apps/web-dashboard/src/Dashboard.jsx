@@ -27,6 +27,7 @@ function Dashboard() {
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisStep, setAnalysisStep] = useState('');
   const [analysisProgress, setAnalysisProgress] = useState(0);
+  const [fakeStep, setFakeStep] = useState('thinking...');
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
@@ -148,6 +149,33 @@ function Dashboard() {
       clearTimeout(timeout);
     };
   }, [fetchAllData]);
+
+  // Effect to cycle through fake status messages when analyzing
+  useEffect(() => {
+    if (!analyzing) {
+      setFakeStep('thinking...');
+      return;
+    }
+
+    const messages = ['thinking...', 'generating...', 'verifying...'];
+    let timeoutId;
+
+    const cycleMessages = () => {
+      // Different frequencies and intervals as requested
+      const randomInterval = Math.floor(Math.random() * 2000) + 800; // 0.8s to 2.8s
+      timeoutId = setTimeout(() => {
+        setFakeStep(prev => {
+          const currentIndex = messages.indexOf(prev);
+          return messages[(currentIndex + 1) % messages.length];
+        });
+        cycleMessages();
+      }, randomInterval);
+    };
+
+    cycleMessages();
+
+    return () => clearTimeout(timeoutId);
+  }, [analyzing]);
 
   const handleLogout = async () => {
     try {
@@ -621,31 +649,31 @@ function Dashboard() {
                       )}
 
                       {analyzing ? (
-                        <div className="analysis-progress-container">
+                        <div className="analysis-progress-container premium-assessment">
+                          {/* LED corner indicators */}
+                          <div className="led-corner top-left"></div>
+                          <div className="led-corner top-right"></div>
+                          <div className="led-corner bottom-left"></div>
+                          <div className="led-corner bottom-right"></div>
+                          
                           <div className="analysis-progress-header">
-                            <Zap size={20} className="pulse-icon" />
-                            <span>{analysisStep}</span>
+                            <span className="fake-step-text">{fakeStep}</span>
                           </div>
-                          <div className="analysis-progress-bar-bg">
-                            <div className="analysis-progress-bar-fill" style={{ width: `${analysisProgress}%` }}></div>
+                          
+                          <div className="marching-ants-wrapper">
+                            <div className="analysis-progress-bar-bg">
+                              <div className="analysis-progress-bar-fill" style={{ width: `${analysisProgress}%` }}>
+                                <div className="bar-glow"></div>
+                              </div>
+                            </div>
                           </div>
-                          <div className="analysis-steps-indicators">
-                            <div className={`step-dot ${analysisProgress >= 25 ? 'active' : ''}`}>
-                              {analysisProgress > 25 ? <CheckCircle size={14} /> : <div className="dot"></div>}
-                              <span>Observe</span>
-                            </div>
-                            <div className={`step-dot ${analysisProgress >= 50 ? 'active' : ''}`}>
-                              {analysisProgress > 50 ? <CheckCircle size={14} /> : <div className="dot"></div>}
-                              <span>Analyze</span>
-                            </div>
-                            <div className={`step-dot ${analysisProgress >= 75 ? 'active' : ''}`}>
-                              {analysisProgress > 75 ? <CheckCircle size={14} /> : <div className="dot"></div>}
-                              <span>Recommend</span>
-                            </div>
-                            <div className={`step-dot ${analysisProgress >= 90 ? 'active' : ''}`}>
-                              {analysisProgress >= 100 ? <CheckCircle size={14} /> : <div className="dot"></div>}
-                              <span>Finalize</span>
-                            </div>
+                          
+                          <div className="led-strip">
+                            <div className="led-node pulse-1"></div>
+                            <div className="led-node pulse-2"></div>
+                            <div className="led-node pulse-3"></div>
+                            <div className="led-node pulse-1"></div>
+                            <div className="led-node pulse-2"></div>
                           </div>
                         </div>
                       ) : (
@@ -867,71 +895,109 @@ function Dashboard() {
         .report-container { padding: 32px; margin-bottom: 24px; }
         .report-header { border-bottom: 2px solid #eee; padding-bottom: 16px; margin-bottom: 24px; }
         
-        .analysis-progress-container {
-          padding: 24px;
-          background: #f8fafc;
-          border-radius: 12px;
+        .analysis-progress-container.premium-assessment {
+          padding: 32px;
+          background: #0f172a;
+          border-radius: 16px;
           margin-top: 16px;
-          border: 1px solid #e2e8f0;
-        }
-        .analysis-progress-header {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          margin-bottom: 16px;
-          color: var(--primary-color);
-          font-weight: 600;
-        }
-        .pulse-icon {
-          animation: icon-pulse 2s infinite;
-        }
-        @keyframes icon-pulse {
-          0% { transform: scale(1); opacity: 1; }
-          50% { transform: scale(1.2); opacity: 0.7; }
-          100% { transform: scale(1); opacity: 1; }
-        }
-        .analysis-progress-bar-bg {
-          height: 8px;
-          background: #e2e8f0;
-          border-radius: 4px;
+          border: 1px solid #1e293b;
+          position: relative;
           overflow: hidden;
-          margin-bottom: 20px;
+          box-shadow: 0 10px 25px rgba(0,0,0,0.3);
         }
+
+        .fake-step-text {
+          color: #38bdf8;
+          font-family: 'Outfit', sans-serif;
+          font-size: 1.1rem;
+          font-weight: 700;
+          letter-spacing: 1px;
+          text-transform: uppercase;
+          text-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+        }
+
+        .marching-ants-wrapper {
+          padding: 10px;
+          background-image: linear-gradient(90deg, #38bdf8 50%, transparent 50%), linear-gradient(90deg, #38bdf8 50%, transparent 50%), linear-gradient(0deg, #38bdf8 50%, transparent 50%), linear-gradient(0deg, #38bdf8 50%, transparent 50%);
+          background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
+          background-size: 15px 2px, 15px 2px, 2px 15px, 2px 15px;
+          background-position: 0 0, 0 100%, 0 0, 100% 0;
+          animation: marching-ants 0.8s infinite linear;
+          border-radius: 10px;
+          margin: 10px 0;
+        }
+
+        @keyframes marching-ants {
+          to { background-position: 15px 0, -15px 100%, 0 -15px, 100% 15px; }
+        }
+
+        .analysis-progress-bar-bg {
+          height: 12px;
+          background: #1e293b;
+          border-radius: 6px;
+          overflow: hidden;
+          position: relative;
+        }
+
         .analysis-progress-bar-fill {
           height: 100%;
-          background: linear-gradient(90deg, #3b82f6, #60a5fa);
-          transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+          background: linear-gradient(90deg, #0ea5e9, #38bdf8, #7dd3fc);
+          transition: width 0.5s cubic-bezier(0.1, 0.7, 0.1, 1);
+          position: relative;
         }
-        .analysis-steps-indicators {
-          display: flex;
-          justify-content: space-between;
+
+        .bar-glow {
+          position: absolute;
+          top: 0; right: 0; bottom: 0;
+          width: 30px;
+          background: white;
+          filter: blur(8px);
+          opacity: 0.4;
+          animation: bar-shine 1.5s infinite;
         }
-        .step-dot {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 6px;
-          flex: 1;
-          color: #94a3b8;
-          font-size: 0.75rem;
-          font-weight: 600;
-          transition: all 0.3s;
+
+        @keyframes bar-shine {
+          from { transform: translateX(-200px); }
+          to { transform: translateX(500px); }
         }
-        .step-dot.active {
-          color: var(--primary-color);
-        }
-        .step-dot .dot {
-          width: 8px;
-          height: 8px;
+
+        .led-corner {
+          position: absolute;
+          width: 6px; height: 6px;
           border-radius: 50%;
-          background: #cbd5e1;
+          background: #ef4444;
+          box-shadow: 0 0 10px #ef4444;
+          animation: led-blink 1s infinite alternate;
         }
-        .step-dot.active .dot {
-          background: var(--primary-color);
-          box-shadow: 0 0 0 4px #dbeafe;
+        .top-left { top: 12px; left: 12px; }
+        .top-right { top: 12px; right: 12px; }
+        .bottom-left { bottom: 12px; left: 12px; }
+        .bottom-right { bottom: 12px; right: 12px; }
+
+        .led-strip {
+          display: flex;
+          justify-content: center;
+          gap: 12px;
+          margin-top: 15px;
         }
-        .step-dot svg {
-          color: #10b981;
+        .led-node {
+          width: 6px; height: 6px;
+          border-radius: 50%;
+          background: #38bdf8;
+          box-shadow: 0 0 8px #38bdf8;
+        }
+        .pulse-1 { animation: pulse 1.5s infinite 0s; }
+        .pulse-2 { animation: pulse 1.5s infinite 0.3s; }
+        .pulse-3 { animation: pulse 1.5s infinite 0.6s; }
+
+        @keyframes pulse {
+          0%, 100% { opacity: 0.3; transform: scale(0.8); }
+          50% { opacity: 1; transform: scale(1.2); box-shadow: 0 0 15px #38bdf8; }
+        }
+
+        @keyframes led-blink {
+          from { opacity: 0.2; }
+          to { opacity: 1; filter: brightness(1.5); }
         }
 
         /* --- Premium Assessment & Report Styling --- */
