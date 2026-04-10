@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { auth } from '../../lib/firebase';
+import { auth } from '@/lib/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
-import { LogIn, Mail, Lock, Chrome, UserPlus, ArrowLeft } from 'lucide-react';
+import { LogIn, Mail, Lock, Globe, UserPlus, ArrowLeft } from 'lucide-react';
 
 export default function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -18,16 +18,20 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
+    console.log('Attempting authentication...', { isSignUp, email });
     try {
       if (isSignUp) {
+        console.log('Creating user...');
         await createUserWithEmailAndPassword(auth, email, password);
       } else {
+        console.log('Signing in...');
         await signInWithEmailAndPassword(auth, email, password);
       }
+      console.log('Auth successful, redirecting...');
       router.push('/dashboard');
     } catch (err) {
+      console.error('Auth error:', err);
       setError(isSignUp ? 'Sign up failed. Try a different email.' : 'Invalid email or password. Please try again.');
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -127,7 +131,7 @@ export default function LoginPage() {
             onClick={handleGoogleLogin}
             className="w-full py-4 rounded-xl bg-white/5 border border-white/10 text-text-main font-semibold flex items-center justify-center gap-3 hover:bg-white/10 active:scale-[0.98] transition-all"
           >
-            <Chrome size={20} />
+            <Globe size={20} />
             Continue with Google
           </button>
 
