@@ -4,6 +4,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './firebase';
 import Login from './Login';
 import Dashboard from './Dashboard';
+import Landing from './Landing';
 import './App.css';
 
 function App() {
@@ -30,9 +31,10 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
+        <Route path="/" element={<Landing />} />
+        <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <Login />} />
         <Route 
-          path="/" 
+          path="/dashboard" 
           element={user ? <Dashboard /> : <Navigate to="/login" />} 
         />
       </Routes>

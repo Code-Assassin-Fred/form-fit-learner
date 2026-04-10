@@ -1,0 +1,103 @@
+@import "tailwindcss";
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&display=swap');
+
+@theme {
+  --color-bg-main: #050505;
+  --color-bg-card: #0F0F11;
+  --color-bg-card-hover: #161619;
+  --color-brand-primary: #00E5FF;
+  --color-brand-primary-dark: #00BBD4;
+  --color-brand-secondary: #FF3D00;
+  --color-brand-accent: #FBBF24;
+  --color-text-main: #F8FAFC;
+  --color-text-muted: #94A3B8;
+  --color-text-dark: #0f172a;
+
+  --font-outfit: var(--font-outfit), sans-serif;
+  --font-inter: var(--font-inter), sans-serif;
+}
+
+:root {
+  --font-inter: 'Inter', sans-serif;
+  --font-outfit: 'Outfit', sans-serif;
+}
+
+body {
+  @apply bg-bg-main text-text-main antialiased font-inter;
+}
+
+/* Hide scrollbars globally */
+::-webkit-scrollbar {
+  display: none;
+}
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Base Styles for original design consistency */
+.landing-page-bg {
+  @apply relative min-h-screen overflow-x-hidden;
+  background-image: radial-gradient(circle at 50% 0%, rgba(0, 229, 255, 0.05) 0%, transparent 50%),
+                    radial-gradient(circle at 80% 80%, rgba(255, 61, 0, 0.03) 0%, transparent 40%);
+}
+
+.landing-page-bg::before {
+  content: '';
+  @apply absolute top-0 left-0 w-1/2 h-[800px] pointer-events-none -z-10;
+  background: radial-gradient(circle at 10% 20%, rgba(0, 229, 255, 0.08) 0%, transparent 60%);
+}
+
+.landing-page-bg::after {
+  content: '';
+  @apply absolute top-[20%] right-0 w-[60%] h-[800px] pointer-events-none -z-10;
+  background: radial-gradient(circle at 90% 50%, rgba(255, 61, 0, 0.05) 0%, transparent 60%);
+}
+
+/* Utilities */
+.glass-effect {
+  @apply bg-opacity-60 backdrop-blur-2xl border border-white border-opacity-10;
+}
+
+.glass-card {
+  @apply bg-bg-card border border-white border-opacity-10 rounded-[24px] overflow-hidden transition-all duration-300;
+}
+
+.glass-card:hover {
+  @apply bg-bg-card-hover border-opacity-20 -translate-y-1 shadow-2xl shadow-black;
+}
+
+@keyframes marching-ants {
+  to { background-position: 15px 0, -15px 100%, 0 -15px, 100% 15px; }
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+  100% { transform: translateY(0px); }
+}
+
+@keyframes scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(calc(-50% - 40px)); }
+}
+
+.animate-marching-ants {
+  background: linear-gradient(90deg, #38bdf8 50%, transparent 50%), 
+              linear-gradient(90deg, #38bdf8 50%, transparent 50%), 
+              linear-gradient(0deg, #38bdf8 50%, transparent 50%), 
+              linear-gradient(0deg, #38bdf8 50%, transparent 50%);
+  background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
+  background-size: 15px 2px, 15px 2px, 2px 15px, 2px 15px;
+  background-position: 0 0, 0 100%, 0 0, 100% 0;
+  animation: marching-ants 1s infinite linear;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-marquee {
+  animation: scroll 30s linear infinite;
+}

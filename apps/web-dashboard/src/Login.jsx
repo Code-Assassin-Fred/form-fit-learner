@@ -22,7 +22,7 @@ const Login = () => {
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
       setError(isSignUp ? 'Sign up failed. Try a different email.' : 'Invalid email or password. Please try again.');
       console.error(err);
@@ -35,7 +35,7 @@ const Login = () => {
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
       setError('Google Sign-In failed.');
       console.error(err);
