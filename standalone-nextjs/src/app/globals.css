@@ -1,6 +1,6 @@
-@import "tailwindcss";
-
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&display=swap');
+
+@import "tailwindcss";
 
 @theme {
   --color-bg-main: #050505;
@@ -57,15 +57,15 @@ body {
 
 /* Utilities */
 .glass-effect {
-  @apply bg-opacity-60 backdrop-blur-2xl border border-white border-opacity-10;
+  @apply bg-black/60 backdrop-blur-2xl border border-white/10;
 }
 
 .glass-card {
-  @apply bg-bg-card border border-white border-opacity-10 rounded-[24px] overflow-hidden transition-all duration-300;
+  @apply bg-bg-card border border-white/10 rounded-[24px] overflow-hidden transition-all duration-300;
 }
 
 .glass-card:hover {
-  @apply bg-bg-card-hover border-opacity-20 -translate-y-1 shadow-2xl shadow-black;
+  @apply bg-bg-card-hover border-white/20 -translate-y-1 shadow-2xl shadow-black;
 }
 
 @keyframes marching-ants {
